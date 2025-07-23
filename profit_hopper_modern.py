@@ -1,40 +1,50 @@
-
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import streamlit.components.v1 as components
+from datetime import datetime, timedelta
+import pytz
+
+# Attempt to use browser JS to detect timezone offset
+try:
+    from streamlit_js_eval import streamlit_js_eval
+    _HAS_JS_EVAL = True
+except Exception:
+    _HAS_JS_EVAL = False
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# Initialize tracker and time state
+# --- Session State Init ---
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
+if "tz_offset_minutes" not in st.session_state:
+    st.session_state.tz_offset_minutes = None
 if "local_time_str" not in st.session_state:
     st.session_state.local_time_str = ""
+if "local_tz_name" not in st.session_state:
+    st.session_state.local_tz_name = None
 
-# Inject JavaScript to get formatted local time string
-components.html("""
-<script>
-const now = new Date();
-const formatted = now.toLocaleString('en-US', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: true
-});
-const input = window.parent.document.querySelector('input[data-testid="time-capture"]');
-if (input) {
-    input.value = formatted;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-}
-</script>
-""", height=0)
+# --- Detect Browser Timezone Offset ---
+offset = None
+if _HAS_JS_EVAL:
+    try:
+        # getTimezoneOffset() returns (UTC - Local) minutes
+        off = streamlit_js_eval(js_expressions='new Date().getTimezoneOffset()', key='tz_off')
+        if off is not None:
+            offset = int(off)
+    except Exception:
+        offset = None
 
-# Capture local time string into Streamlit
-local_time = st.text_input(" ", key="time-capture", label_visibility="collapsed")
-if local_time:
-    st.session_state.local_time_str = local_time
+if offset is not None:
+    st.session_state.tz_offset_minutes = offset
+    utc_now = datetime.utcnow()
+    local_dt = utc_now - timedelta(minutes=offset)  # Local = UTC - offset
+else:
+    # Fallback: Use America/Chicago (user request) if detection fails
+    utc_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    local_dt = utc_now.astimezone(pytz.timezone("America/Chicago"))
 
-# Sidebar settings
+st.session_state.local_time_str = local_dt.strftime("%I:%M %p %m/%d/%Y")
+
+# --- Sidebar settings ---
 with st.sidebar:
     st.header("🎯 Setup")
     bankroll = st.number_input("💵 Starting Bankroll ($)", min_value=10, value=100, step=10)
@@ -42,25 +52,25 @@ with st.sidebar:
     risk = st.selectbox("📊 Risk Level", ["Low", "Medium", "High"])
     profit_goal_percent = st.slider("🏁 Profit Goal (%)", 5, 100, 20)
 
-# Strategy calculations
+# --- Strategy calculations ---
 session_unit = bankroll / sessions
 risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# Summary section
+# --- Summary section ---
 df = pd.DataFrame(st.session_state.tracker)
-total_in = df["Amount In"].sum() if not df.empty else 0
-total_out = df["Amount Out"].sum() if not df.empty else 0
+total_in = df["Amount In"].sum() if not df.empty else 0.0
+total_out = df["Amount Out"].sum() if not df.empty else 0.0
 net = total_out - total_in
 
 st.markdown("### 📊 Quick Summary")
 st.markdown(
-    f"<div style='line-height: 1.5; font-size: 16px;'>"
-    f"<b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>"
-    f"<b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>"
-    f"<b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}"
-    f"</div>",
+    f"""<div style='line-height: 1.5; font-size: 16px;'>
+    <b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>
+    <b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>
+    <b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}
+    </div>""",
     unsafe_allow_html=True
 )
 
@@ -68,7 +78,7 @@ st.markdown("---")
 
 tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
 
-# Tracker form
+# --- Tracker Form ---
 with tab1:
     st.subheader("➕ Add Session")
     with st.form("session_form", clear_on_submit=True):
@@ -81,25 +91,35 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
-            log_time = st.session_state.get("local_time_str", "UNKNOWN TIME")
             win_loss = amount_out - amount_in
+            # capture fresh timestamp at submit (so not stale)
+            if st.session_state.tz_offset_minutes is not None:
+                utc_now = datetime.utcnow()
+                local_dt = utc_now - timedelta(minutes=st.session_state.tz_offset_minutes)
+            else:
+                utc_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+                local_dt = utc_now.astimezone(pytz.timezone("America/Chicago"))
+            timestamp_str = local_dt.strftime("%I:%M %p %m/%d/%Y")
             st.session_state.tracker.append({
-                "Date/Time": log_time,
+                "Date/Time": timestamp_str,
                 "Game": game,
                 "Amount In": amount_in,
                 "Amount Out": amount_out,
                 "Win/Loss": win_loss,
                 "Bonus Hit": bonus_hit,
                 "Rule Followed": rule_followed,
-                "Notes": notes
+                "Notes": notes,
             })
+            st.success("Session added.")
             st.rerun()
 
-# Log table
+# --- Log Table ---
 with tab2:
     st.subheader("🧾 Session Log")
     if not df.empty:
-        df.index += 1
-        st.dataframe(df, use_container_width=True)
+        df_display = df.copy()
+        df_display.index += 1  # 1-based row numbers
+        st.dataframe(df_display, use_container_width=True)
     else:
         st.info("No sessions logged yet.")
+
