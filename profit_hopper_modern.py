@@ -34,17 +34,17 @@ st.markdown("### 📊 Quick Summary")
 col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("**💼 Bankroll**")
-    st.markdown(f"Start: `${bankroll:.0f}`  
-Goal: `${profit_goal:.0f}`")
+    st.write(f"Start: ${bankroll:.0f}")
+    st.write(f"Goal: ${profit_goal:.0f}")
 with col2:
     st.markdown("**🧮 Strategy**")
-    st.markdown(f"Session: `${session_unit:.0f}`  
-Max Bet: `${max_bet:.2f}`")
+    st.write(f"Session: ${session_unit:.0f}")
+    st.write(f"Max Bet: ${max_bet:.2f}")
 with col3:
     st.markdown("**📈 Status**")
-    st.markdown(f"In: `${total_in:.0f}`  
-Out: `${total_out:.0f}`  
-Net: `${net:.0f}`")
+    st.write(f"In: ${total_in:.0f}")
+    st.write(f"Out: ${total_out:.0f}")
+    st.write(f"Net: ${net:.0f}")
 
 st.markdown("---")
 
