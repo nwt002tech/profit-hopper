@@ -1,50 +1,41 @@
+
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime
 
-# Attempt to use browser JS to detect timezone offset
-try:
-    from streamlit_js_eval import streamlit_js_eval
-    _HAS_JS_EVAL = True
-except Exception:
-    _HAS_JS_EVAL = False
+# === Game Recommendation (Data-Driven) ===
+game_data = [
+    {"name": "Jacks or Better Video Poker", "rtp": 99.54, "volatility": "Low", "bonus_freq": "None", "min_bet": 0.25, "notes": "Great for conservative play. Use only 1-credit bets."},
+    {"name": "88 Fortunes", "rtp": 96.0, "volatility": "Low", "bonus_freq": "Medium", "min_bet": 0.88, "notes": "Better with pot nearly full. Use when bet under session unit."},
+    {"name": "Ultimate Fire Link", "rtp": 96.5, "volatility": "Medium", "bonus_freq": "High", "min_bet": 0.50, "notes": "Only play if ball count > 450 or Mini > $20."},
+    {"name": "Lightning Link", "rtp": 96.1, "volatility": "Medium-High", "bonus_freq": "Medium", "min_bet": 0.50, "notes": "Look for high Mini/Major values. Better as bankroll grows."},
+    {"name": "Buffalo Gold", "rtp": 96.0, "volatility": "High", "bonus_freq": "Low", "min_bet": 0.60, "notes": "Use in later sessions with profit buffer. High variance."},
+    {"name": "Triple Double Bonus Poker", "rtp": 97.0, "volatility": "High", "bonus_freq": "None", "min_bet": 0.25, "notes": "Big payout potential. Use in mid-to-late sessions."},
+    {"name": "Cleopatra Keno", "rtp": 94.0, "volatility": "Low", "bonus_freq": "Medium", "min_bet": 0.20, "notes": "Reliable time extender. Great for early game play."},
+    {"name": "Dancing Drums", "rtp": 95.0, "volatility": "Medium", "bonus_freq": "Medium", "min_bet": 0.88, "notes": "Look for near full drums or high Mini."}
+]
+
+def score_game(game, session_unit, risk_level):
+    rtp_score = game["rtp"]
+    bet_factor = 1 if game["min_bet"] <= session_unit else 0.5
+    vol_score = {"Low": 2, "Medium": 1, "Medium-High": 0.5, "High": 0}[game["volatility"]]
+    risk_tolerance = {"Low": 1, "Medium": 1.5, "High": 2}[risk_level]
+    vol_score *= risk_tolerance
+    return (rtp_score * bet_factor * vol_score)
+
+def get_recommended_games(session_unit, max_bet, risk):
+    scored = []
+    for game in game_data:
+        score = score_game(game, session_unit, risk)
+        scored.append((score, game))
+    sorted_games = sorted(scored, key=lambda x: x[0], reverse=True)
+    return [(g["name"], g["notes"]) for _, g in sorted_games]
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# --- Session State Init ---
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
-if "tz_offset_minutes" not in st.session_state:
-    st.session_state.tz_offset_minutes = None
-if "local_time_str" not in st.session_state:
-    st.session_state.local_time_str = ""
-if "local_tz_name" not in st.session_state:
-    st.session_state.local_tz_name = None
 
-# --- Detect Browser Timezone Offset ---
-offset = None
-if _HAS_JS_EVAL:
-    try:
-        # getTimezoneOffset() returns (UTC - Local) minutes
-        off = streamlit_js_eval(js_expressions='new Date().getTimezoneOffset()', key='tz_off')
-        if off is not None:
-            offset = int(off)
-    except Exception:
-        offset = None
-
-if offset is not None:
-    st.session_state.tz_offset_minutes = offset
-    utc_now = datetime.utcnow()
-    local_dt = utc_now - timedelta(minutes=offset)  # Local = UTC - offset
-else:
-    # Fallback: Use America/Chicago (user request) if detection fails
-    utc_now = datetime.utcnow().replace(tzinfo=pytz.utc)
-    local_dt = utc_now.astimezone(pytz.timezone("America/Chicago"))
-
-st.session_state.local_time_str = local_dt.strftime("%I:%M %p %m/%d/%Y")
-
-# --- Sidebar settings ---
 with st.sidebar:
     st.header("🎯 Setup")
     bankroll = st.number_input("💵 Starting Bankroll ($)", min_value=10, value=100, step=10)
@@ -52,33 +43,32 @@ with st.sidebar:
     risk = st.selectbox("📊 Risk Level", ["Low", "Medium", "High"])
     profit_goal_percent = st.slider("🏁 Profit Goal (%)", 5, 100, 20)
 
-# --- Strategy calculations ---
 session_unit = bankroll / sessions
 risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# --- Summary section ---
 df = pd.DataFrame(st.session_state.tracker)
-total_in = df["Amount In"].sum() if not df.empty else 0.0
-total_out = df["Amount Out"].sum() if not df.empty else 0.0
+total_in = df["Amount In"].sum() if not df.empty else 0
+total_out = df["Amount Out"].sum() if not df.empty else 0
 net = total_out - total_in
 
 st.markdown("### 📊 Quick Summary")
 st.markdown(
-    f"""<div style='line-height: 1.5; font-size: 16px;'>
-    <b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>
-    <b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>
-    <b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}
-    </div>""",
+    "<div style='line-height: 1.5; font-size: 16px;'>"
+    f"<b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>"
+    f"<b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>"
+    f"<b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}"
+    "</div>",
     unsafe_allow_html=True
 )
 
-st.markdown("---")
+st.markdown("### 🎯 Recommended Game Order")
+recommended = get_recommended_games(session_unit, max_bet, risk)
+for idx, (game, note) in enumerate(recommended, 1):
+    st.markdown("**{}. {}** — {}".format(idx, game, note))
 
 tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
-
-# --- Tracker Form ---
 with tab1:
     st.subheader("➕ Add Session")
     with st.form("session_form", clear_on_submit=True):
@@ -91,35 +81,24 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
+            log_time = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
             win_loss = amount_out - amount_in
-            # capture fresh timestamp at submit (so not stale)
-            if st.session_state.tz_offset_minutes is not None:
-                utc_now = datetime.utcnow()
-                local_dt = utc_now - timedelta(minutes=st.session_state.tz_offset_minutes)
-            else:
-                utc_now = datetime.utcnow().replace(tzinfo=pytz.utc)
-                local_dt = utc_now.astimezone(pytz.timezone("America/Chicago"))
-            timestamp_str = local_dt.strftime("%I:%M %p %m/%d/%Y")
             st.session_state.tracker.append({
-                "Date/Time": timestamp_str,
+                "Date/Time": log_time,
                 "Game": game,
                 "Amount In": amount_in,
                 "Amount Out": amount_out,
                 "Win/Loss": win_loss,
                 "Bonus Hit": bonus_hit,
                 "Rule Followed": rule_followed,
-                "Notes": notes,
+                "Notes": notes
             })
-            st.success("Session added.")
             st.rerun()
 
-# --- Log Table ---
 with tab2:
     st.subheader("🧾 Session Log")
     if not df.empty:
-        df_display = df.copy()
-        df_display.index += 1  # 1-based row numbers
-        st.dataframe(df_display, use_container_width=True)
+        df.index += 1
+        st.dataframe(df, use_container_width=True)
     else:
         st.info("No sessions logged yet.")
-
