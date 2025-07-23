@@ -9,38 +9,37 @@ st.set_page_config(page_title="Profit Hopper", layout="centered")
 # Tracker initialization
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
-if "timestamp_ready" not in st.session_state:
-    st.session_state.timestamp_ready = False
-if "js_time" not in st.session_state:
-    st.session_state.js_time = ""
 
-# Inject JS to fetch time and store in hidden field
+# JS to capture timestamp when Add Session is clicked
 components.html("""
 <script>
-function sendAccurateTime() {
+const sendLocalTime = () => {
     const now = new Date();
     const formatted = now.toLocaleString('en-US', {
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
         hour12: true
     });
-    const streamlitInput = window.parent.document.querySelector('input[data-testid="js-time"]');
-    if (streamlitInput) {
-        streamlitInput.value = formatted;
-        streamlitInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const input = window.parent.document.querySelector('input[data-testid="local-time-field"]');
+    if (input) {
+        input.value = formatted;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
     }
-}
-const addBtn = window.parent.document.querySelector('button[aria-label="Click to add session"]');
-if (addBtn) {
-    addBtn.addEventListener("click", sendAccurateTime);
-}
+};
+const observer = new MutationObserver(() => {
+    const button = window.parent.document.querySelector('button[kind="primary"]');
+    if (button) {
+        button.addEventListener("click", sendLocalTime);
+    }
+});
+observer.observe(window.parent.document.body, { childList: true, subtree: true });
 </script>
 """, height=0)
 
-# Input for timestamp (updated via JS)
-st.text_input(" ", key="js-time", label_visibility="collapsed")
+# Text input to store the time
+local_time = st.text_input(" ", key="local-time-field", label_visibility="collapsed")
 
-# Sidebar config
+# Sidebar setup
 with st.sidebar:
     st.header("🎯 Setup")
     bankroll = st.number_input("💵 Starting Bankroll ($)", min_value=10, value=100, step=10)
@@ -54,12 +53,13 @@ risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# Summary
+# Tracker DataFrame
 df = pd.DataFrame(st.session_state.tracker)
 total_in = df["Amount In"].sum() if not df.empty else 0
 total_out = df["Amount Out"].sum() if not df.empty else 0
 net = total_out - total_in
 
+# Summary section
 st.markdown("### 📊 Quick Summary")
 st.markdown(
     f"<div style='line-height: 1.5; font-size: 16px;'>"
@@ -74,7 +74,7 @@ st.markdown("---")
 
 tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
 
-# Form for logging
+# Tracker form
 with tab1:
     st.subheader("➕ Add Session")
     game = st.text_input("Game / Machine Name", key="game")
@@ -85,21 +85,20 @@ with tab1:
     notes = st.text_area("Notes", key="notes")
 
     if st.button("➕ Add Session", type="primary"):
-        timestamp = st.session_state.get("js-time", datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"))
-        win_loss = amount_out - amount_in
+        timestamp = local_time if local_time else datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
         st.session_state.tracker.append({
             "Date/Time": timestamp,
             "Game": game,
             "Amount In": amount_in,
             "Amount Out": amount_out,
-            "Win/Loss": win_loss,
+            "Win/Loss": amount_out - amount_in,
             "Bonus Hit": bonus_hit,
             "Rule Followed": rule_followed,
             "Notes": notes
         })
         st.rerun()
 
-# Session log
+# Log tab
 with tab2:
     st.subheader("🧾 Session Log")
     if not df.empty:
