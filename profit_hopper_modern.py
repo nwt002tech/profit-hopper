@@ -25,14 +25,14 @@ def score_game(game, session_unit, risk_level, max_bet):
     vol_score *= risk_tolerance
     return (rtp_score * bet_factor * vol_score)
 
-def get_recommended_games(session_unit, max_bet, risk):
+def get_recommended_games(session_unit, max_bet, risk, num_needed):
     scored = []
     for game in game_data:
         score = score_game(game, session_unit, risk, max_bet)
         if score > 0:
             scored.append((score, game))
     sorted_games = sorted(scored, key=lambda x: x[0], reverse=True)
-    return [(g["name"], g["min_bet"], g["notes"]) for _, g in sorted_games]
+    return [(g["name"], g["min_bet"], g["notes"]) for _, g in sorted_games][:num_needed]
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
@@ -73,8 +73,10 @@ st.markdown(
 
 # === Game Recommendations ===
 st.markdown("### 🎯 Recommended Game Order")
-recommended = get_recommended_games(session_unit, max_bet, risk)
+num_needed = remaining_sessions + 2
+recommended = get_recommended_games(session_unit, max_bet, risk, num_needed)
 if recommended:
+    st.markdown("_Choose next available game from the top down. All meet your current bankroll plan._")
     for idx, (game, min_bet, note) in enumerate(recommended, 1):
         st.markdown(f"**{idx}. {game}** — Min Bet: ${min_bet:.2f} — {note}")
 else:
