@@ -2,44 +2,39 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import pytz
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# Store session data
+# Initialize tracker and time state
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
-if "user_timezone" not in st.session_state:
-    st.session_state.user_timezone = None
+if "local_time_str" not in st.session_state:
+    st.session_state.local_time_str = ""
 
-# JS to detect timezone string and send it to Streamlit
+# Inject JavaScript to get formatted local time string
 components.html("""
 <script>
-const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const input = window.parent.document.querySelector('input[data-testid="user-tz-field"]');
-if (input && tz) {
-    input.value = tz;
+const now = new Date();
+const formatted = now.toLocaleString('en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: true
+});
+const input = window.parent.document.querySelector('input[data-testid="time-capture"]');
+if (input) {
+    input.value = formatted;
     input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 </script>
 """, height=0)
 
-# Hidden input to catch user's timezone
-tz_input = st.text_input(" ", key="user-tz-field", label_visibility="collapsed")
-if tz_input and not st.session_state.user_timezone:
-    st.session_state.user_timezone = tz_input
+# Capture local time string into Streamlit
+local_time = st.text_input(" ", key="time-capture", label_visibility="collapsed")
+if local_time:
+    st.session_state.local_time_str = local_time
 
-# Convert UTC timestamp to user's timezone
-def convert_utc_to_user_tz(utc_str, user_tz):
-    try:
-        utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-        local_dt = utc_dt.astimezone(pytz.timezone(user_tz))
-        return local_dt.strftime("%Y-%m-%d %I:%M:%S %p")
-    except Exception:
-        return utc_str
-
-# Sidebar
+# Sidebar settings
 with st.sidebar:
     st.header("🎯 Setup")
     bankroll = st.number_input("💵 Starting Bankroll ($)", min_value=10, value=100, step=10)
@@ -47,7 +42,7 @@ with st.sidebar:
     risk = st.selectbox("📊 Risk Level", ["Low", "Medium", "High"])
     profit_goal_percent = st.slider("🏁 Profit Goal (%)", 5, 100, 20)
 
-# Strategy logic
+# Strategy calculations
 session_unit = bankroll / sessions
 risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
@@ -86,10 +81,10 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
-            utc_now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            log_time = st.session_state.get("local_time_str", "UNKNOWN TIME")
             win_loss = amount_out - amount_in
             st.session_state.tracker.append({
-                "UTC Timestamp": utc_now,
+                "Date/Time": log_time,
                 "Game": game,
                 "Amount In": amount_in,
                 "Amount Out": amount_out,
@@ -100,14 +95,11 @@ with tab1:
             })
             st.rerun()
 
-# Log display
+# Log table
 with tab2:
     st.subheader("🧾 Session Log")
     if not df.empty:
-        user_tz = st.session_state.get("user_timezone", "UTC")
-        df["Date/Time"] = df["UTC Timestamp"].apply(lambda x: convert_utc_to_user_tz(x, user_tz))
         df.index += 1
-        display_df = df[["Date/Time", "Game", "Amount In", "Amount Out", "Win/Loss", "Bonus Hit", "Rule Followed", "Notes"]]
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(df, use_container_width=True)
     else:
         st.info("No sessions logged yet.")
