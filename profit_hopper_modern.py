@@ -10,7 +10,7 @@ if "tracker" not in st.session_state:
 
 # --- Header ---
 st.markdown("## 🎰 Profit Hopper")
-st.markdown("Track your bankroll, stay disciplined, and hit your profit goals.")
+st.caption("Track your bankroll, stay disciplined, and hit your profit goals.")
 
 # --- Sidebar: Bankroll and Strategy Setup ---
 with st.sidebar:
@@ -26,13 +26,14 @@ risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# --- Bankroll Summary Section ---
-st.markdown("### 📈 Bankroll Summary")
-summary_cols = st.columns(4)
-summary_cols[0].metric("Bankroll", f"${bankroll:.2f}")
-summary_cols[1].metric("Session Unit", f"${session_unit:.2f}")
-summary_cols[2].metric("Max Bet", f"${max_bet:.2f}")
-summary_cols[3].metric("Profit Target", f"${profit_goal:.2f}")
+# --- Bankroll Summary: Condensed into one line ---
+st.markdown(
+    f"📈 **Bankroll Summary**: "
+    f"💵 ${bankroll:.2f} | "
+    f"🎮 ${session_unit:.2f}/session | "
+    f"🎯 Max Bet ${max_bet:.2f} | "
+    f"🏁 Goal: ${profit_goal:.2f}"
+)
 
 st.markdown("---")
 
