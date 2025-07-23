@@ -5,9 +5,14 @@ from datetime import datetime
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
+# JS code to detect local time and pass to Streamlit
+local_time = st.experimental_get_query_params().get("time", [None])[0]
+
 # Initialize session state
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
+if "local_time" not in st.session_state and local_time:
+    st.session_state.local_time = local_time
 
 # --- Sidebar Setup ---
 with st.sidebar:
@@ -58,9 +63,12 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
+            if "local_time" in st.session_state:
+                timestamp = st.session_state.local_time
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
             win_loss = amount_out - amount_in
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            new_entry = {
+            st.session_state.tracker.append({
                 "Date/Time": timestamp,
                 "Game": game,
                 "Amount In": amount_in,
@@ -69,8 +77,7 @@ with tab1:
                 "Bonus Hit": bonus_hit,
                 "Rule Followed": rule_followed,
                 "Notes": notes
-            }
-            st.session_state.tracker.append(new_entry)
+            })
             st.rerun()
 
 # --- Log Display ---
@@ -81,3 +88,18 @@ with tab2:
         st.dataframe(df, use_container_width=True)
     else:
         st.info("No sessions logged yet.")
+
+# --- JS injection for local time detection ---
+st.markdown("""
+<script>
+const now = new Date();
+const formatted = now.toLocaleString('en-US', {
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hour12: true
+}).replace(',', '');
+if (!window.location.search.includes("time=")) {
+  window.location.search = '?time=' + encodeURIComponent(formatted);
+}
+</script>
+""", unsafe_allow_html=True)
