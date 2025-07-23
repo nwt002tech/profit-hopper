@@ -6,29 +6,48 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# JS → HTML component to grab time on demand
-local_time_placeholder = st.empty()
+# Create a container to receive the local time from JavaScript
+if "js_time" not in st.session_state:
+    st.session_state.js_time = None
+
 components.html("""
+    <iframe id="timeframe" style="display:none;"></iframe>
     <script>
-    const sendTime = () => {
+    window.addEventListener("message", (event) => {
+        const timeField = window.parent.document.querySelector('input[data-testid="js-time"]');
+        if (timeField && event.data.type === "localTime") {
+            timeField.value = event.data.time;
+            timeField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+
+    function getLocalTime() {
         const now = new Date();
         const formatted = now.toLocaleString('en-US', {
             year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit',
             hour12: true
         });
-        const streamlitInput = window.parent.document.querySelector('input[data-testid="stTextInput"]');
-        if (streamlitInput) {
-            streamlitInput.value = formatted;
-            streamlitInput.dispatchEvent(new Event('input', { bubbles: true }));
+        parent.postMessage({ type: "localTime", time: formatted }, "*");
+    }
+
+    // Only run on submit button click
+    const parentDoc = window.parent.document;
+    const observer = new MutationObserver(() => {
+        const button = parentDoc.querySelector('button[kind="primary"]');
+        if (button) {
+            button.addEventListener("click", getLocalTime);
         }
-    };
-    setTimeout(sendTime, 500);
+    });
+
+    observer.observe(parent.document.body, { childList: true, subtree: true });
     </script>
 """, height=0)
 
-# Hidden text input to hold JS-injected timestamp
-timestamp_input = st.text_input(" ", label_visibility="collapsed", key="local_time_js")
+# Hidden field to capture injected local time
+timestamp = st.text_input(" ", key="js-time", label_visibility="collapsed")
+if timestamp:
+    st.session_state.js_time = timestamp
 
 # Initialize tracker
 if "tracker" not in st.session_state:
@@ -83,9 +102,9 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
+            timestamp = st.session_state.js_time or datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
             win_loss = amount_out - amount_in
-            timestamp = timestamp_input if timestamp_input else datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
-            new_entry = {
+            st.session_state.tracker.append({
                 "Date/Time": timestamp,
                 "Game": game,
                 "Amount In": amount_in,
@@ -94,8 +113,7 @@ with tab1:
                 "Bonus Hit": bonus_hit,
                 "Rule Followed": rule_followed,
                 "Notes": notes
-            }
-            st.session_state.tracker.append(new_entry)
+            })
             st.rerun()
 
 # Log
