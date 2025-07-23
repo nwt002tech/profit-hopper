@@ -3,22 +3,41 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import pytz
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# UTC timestamp on submission
-def get_utc_now():
-    return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-# Convert UTC to user timezone for display
-def convert_utc_to_local(utc_str):
-    utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-    local_dt = utc_dt.astimezone()
-    return local_dt.strftime("%Y-%m-%d %I:%M:%S %p")
-
-# Session state
+# Store session data
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
+if "user_timezone" not in st.session_state:
+    st.session_state.user_timezone = None
+
+# JS to detect timezone string and send it to Streamlit
+components.html("""
+<script>
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const input = window.parent.document.querySelector('input[data-testid="user-tz-field"]');
+if (input && tz) {
+    input.value = tz;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+</script>
+""", height=0)
+
+# Hidden input to catch user's timezone
+tz_input = st.text_input(" ", key="user-tz-field", label_visibility="collapsed")
+if tz_input and not st.session_state.user_timezone:
+    st.session_state.user_timezone = tz_input
+
+# Convert UTC timestamp to user's timezone
+def convert_utc_to_user_tz(utc_str, user_tz):
+    try:
+        utc_dt = datetime.strptime(utc_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+        local_dt = utc_dt.astimezone(pytz.timezone(user_tz))
+        return local_dt.strftime("%Y-%m-%d %I:%M:%S %p")
+    except Exception:
+        return utc_str
 
 # Sidebar
 with st.sidebar:
@@ -34,13 +53,12 @@ risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# Data summary
+# Summary section
 df = pd.DataFrame(st.session_state.tracker)
 total_in = df["Amount In"].sum() if not df.empty else 0
 total_out = df["Amount Out"].sum() if not df.empty else 0
 net = total_out - total_in
 
-# Compact summary
 st.markdown("### 📊 Quick Summary")
 st.markdown(
     f"<div style='line-height: 1.5; font-size: 16px;'>"
@@ -55,7 +73,7 @@ st.markdown("---")
 
 tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
 
-# --- Tracker Input ---
+# Tracker form
 with tab1:
     st.subheader("➕ Add Session")
     with st.form("session_form", clear_on_submit=True):
@@ -68,10 +86,10 @@ with tab1:
         submitted = st.form_submit_button("Add")
 
         if submitted:
-            utc_time = get_utc_now()
+            utc_now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             win_loss = amount_out - amount_in
             st.session_state.tracker.append({
-                "UTC Timestamp": utc_time,
+                "UTC Timestamp": utc_now,
                 "Game": game,
                 "Amount In": amount_in,
                 "Amount Out": amount_out,
@@ -82,11 +100,12 @@ with tab1:
             })
             st.rerun()
 
-# --- Log ---
+# Log display
 with tab2:
     st.subheader("🧾 Session Log")
     if not df.empty:
-        df["Date/Time"] = df["UTC Timestamp"].apply(convert_utc_to_local)
+        user_tz = st.session_state.get("user_timezone", "UTC")
+        df["Date/Time"] = df["UTC Timestamp"].apply(lambda x: convert_utc_to_user_tz(x, user_tz))
         df.index += 1
         display_df = df[["Date/Time", "Game", "Amount In", "Amount Out", "Win/Loss", "Bonus Hit", "Rule Followed", "Notes"]]
         st.dataframe(display_df, use_container_width=True)
