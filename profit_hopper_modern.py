@@ -6,7 +6,7 @@ from datetime import datetime
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
 # JS code to detect local time and pass to Streamlit
-local_time = st.experimental_get_query_params().get("time", [None])[0]
+local_time = st.query_params.get("time", [None])[0]
 
 # Initialize session state
 if "tracker" not in st.session_state:
