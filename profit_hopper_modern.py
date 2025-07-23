@@ -29,22 +29,16 @@ total_in = df["Amount In"].sum() if not df.empty else 0
 total_out = df["Amount Out"].sum() if not df.empty else 0
 net = total_out - total_in
 
-# --- Compact Summary Display ---
+# --- Ultra-Compact Summary Display (just 3 lines) ---
 st.markdown("### 📊 Quick Summary")
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("**💼 Bankroll**")
-    st.write(f"Start: ${bankroll:.0f}")
-    st.write(f"Goal: ${profit_goal:.0f}")
-with col2:
-    st.markdown("**🧮 Strategy**")
-    st.write(f"Session: ${session_unit:.0f}")
-    st.write(f"Max Bet: ${max_bet:.2f}")
-with col3:
-    st.markdown("**📈 Status**")
-    st.write(f"In: ${total_in:.0f}")
-    st.write(f"Out: ${total_out:.0f}")
-    st.write(f"Net: ${net:.0f}")
+st.markdown(
+    f"<div style='line-height: 1.5; font-size: 16px;'>"
+    f"<b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>"
+    f"<b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>"
+    f"<b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}"
+    f"</div>",
+    unsafe_allow_html=True
+)
 
 st.markdown("---")
 
