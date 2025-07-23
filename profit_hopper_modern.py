@@ -23,6 +23,25 @@ risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
+# --- Updated Totals ---
+df = pd.DataFrame(st.session_state.tracker)
+total_in = df["Amount In"].sum() if not df.empty else 0
+total_out = df["Amount Out"].sum() if not df.empty else 0
+net = total_out - total_in
+
+# --- Ultra-Compact Summary Display (just 3 lines) ---
+st.markdown("### 📊 Quick Summary")
+st.markdown(
+    f"<div style='line-height: 1.5; font-size: 16px;'>"
+    f"<b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>"
+    f"<b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>"
+    f"<b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}"
+    f"</div>",
+    unsafe_allow_html=True
+)
+
+st.markdown("---")
+
 # --- Tabs ---
 tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
 
@@ -53,25 +72,6 @@ with tab1:
             }
             st.session_state.tracker.append(new_entry)
             st.rerun()
-
-# --- Updated Totals ---
-df = pd.DataFrame(st.session_state.tracker)
-total_in = df["Amount In"].sum() if not df.empty else 0
-total_out = df["Amount Out"].sum() if not df.empty else 0
-net = total_out - total_in
-
-# --- Ultra-Compact Summary Display (just 3 lines) ---
-st.markdown("### 📊 Quick Summary")
-st.markdown(
-    f"<div style='line-height: 1.5; font-size: 16px;'>"
-    f"<b>💼 Bankroll</b>: Start ${bankroll:.0f} | Goal ${profit_goal:.0f}<br>"
-    f"<b>🧮 Strategy</b>: ${session_unit:.0f}/session | Max Bet ${max_bet:.2f}<br>"
-    f"<b>📈 Status</b>: In ${total_in:.0f} | Out ${total_out:.0f} | Net ${net:.0f}"
-    f"</div>",
-    unsafe_allow_html=True
-)
-
-st.markdown("---")
 
 # --- Log Display ---
 with tab2:
