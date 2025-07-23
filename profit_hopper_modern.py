@@ -9,15 +9,11 @@ st.set_page_config(page_title="Profit Hopper", layout="centered")
 if "tracker" not in st.session_state:
     st.session_state.tracker = []
 
-# --- Header ---
-st.markdown("## 🎰 Profit Hopper")
-st.caption("Casino Bankroll Discipline & Tracker")
-
 # --- Sidebar Setup ---
 with st.sidebar:
     st.header("🎯 Setup")
     bankroll = st.number_input("💵 Starting Bankroll ($)", min_value=10, value=100, step=10)
-    sessions = st.number_input("🎮 Machines/Sessions to Divide", min_value=1, value=5)
+    sessions = st.number_input("🎮 Sessions", min_value=1, value=5)
     risk = st.selectbox("📊 Risk Level", ["Low", "Medium", "High"])
     profit_goal_percent = st.slider("🏁 Profit Goal (%)", 5, 100, 20)
 
@@ -27,43 +23,45 @@ risk_factor = {"Low": 40, "Medium": 30, "High": 20}
 max_bet = session_unit / risk_factor[risk]
 profit_goal = bankroll * (1 + profit_goal_percent / 100)
 
-# --- Summary Sections ---
-with st.container():
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("**📈 Bankroll Summary**")
-        st.write(f"Start: ${bankroll:.2f}")
-        st.write(f"Goal: ${profit_goal:.2f}")
-    with col2:
-        st.markdown("**📊 Session Strategy**")
-        st.write(f"Per Session: ${session_unit:.2f}")
-        st.write(f"Max Bet: ${max_bet:.2f}")
-    with col3:
-        st.markdown("**💼 Bankroll Status**")
-        df = pd.DataFrame(st.session_state.tracker)
-        total_in = df["Amount In"].sum() if not df.empty else 0
-        total_out = df["Amount Out"].sum() if not df.empty else 0
-        net = total_out - total_in
-        st.write(f"In: ${total_in:.2f}")
-        st.write(f"Out: ${total_out:.2f}")
-        st.write(f"Net: ${net:.2f}")
+# --- Quick Stats ---
+df = pd.DataFrame(st.session_state.tracker)
+total_in = df["Amount In"].sum() if not df.empty else 0
+total_out = df["Amount Out"].sum() if not df.empty else 0
+net = total_out - total_in
+
+# --- Compact Summary Display ---
+st.markdown("### 📊 Quick Summary")
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("**💼 Bankroll**")
+    st.markdown(f"Start: `${bankroll:.0f}`  
+Goal: `${profit_goal:.0f}`")
+with col2:
+    st.markdown("**🧮 Strategy**")
+    st.markdown(f"Session: `${session_unit:.0f}`  
+Max Bet: `${max_bet:.2f}`")
+with col3:
+    st.markdown("**📈 Status**")
+    st.markdown(f"In: `${total_in:.0f}`  
+Out: `${total_out:.0f}`  
+Net: `${net:.0f}`")
 
 st.markdown("---")
 
 # --- Tabs ---
-tab1, tab2 = st.tabs(["📋 Session Tracker", "📊 Session Log"])
+tab1, tab2 = st.tabs(["📋 Tracker", "📊 Log"])
 
 # --- Tracker Input ---
 with tab1:
-    st.subheader("Log a Machine/Session")
+    st.subheader("➕ Add Session")
     with st.form("session_form", clear_on_submit=True):
         game = st.text_input("Game / Machine Name")
         amount_in = st.number_input("Amount Inserted ($)", min_value=0.0, step=1.0)
         amount_out = st.number_input("Cashout Amount ($)", min_value=0.0, step=1.0)
         bonus_hit = st.radio("Bonus Hit?", ["Yes", "No"], horizontal=True)
         rule_followed = st.radio("Followed Rule?", ["Yes", "No"], horizontal=True)
-        notes = st.text_area("Session Notes")
-        submitted = st.form_submit_button("➕ Add Entry")
+        notes = st.text_area("Notes")
+        submitted = st.form_submit_button("Add")
 
         if submitted:
             win_loss = amount_out - amount_in
@@ -78,9 +76,9 @@ with tab1:
                 "Rule Followed": rule_followed,
                 "Notes": notes
             })
-            st.success("Session added!")
+            st.success("✅ Session added!")
 
-# --- Tracker Output ---
+# --- Log Display ---
 with tab2:
     st.subheader("🧾 Session Log")
     if st.session_state.tracker:
