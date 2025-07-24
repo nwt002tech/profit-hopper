@@ -1,112 +1,107 @@
+# Profit Hopper App - Enhanced Version
+# Version: 3.0.1
+# Updated: 2025-07-24 05:48 PM
 
 import streamlit as st
-import datetime
 import pandas as pd
+import json
+from datetime import datetime
+import pytz
 
-st.set_page_config(layout="wide")
-st.markdown("### 🎰 Profit Hopper v1.5.4 — Smart Bankroll Optimizer")
+st.set_page_config(page_title="Profit Hopper", layout="centered")
 
-# Game dataset with varied examples
-full_game_db = [
-    {"Name": "Jacks or Better", "Min_Bet": 0.25, "Volatility": "Low", "Bonus_Feature": "No", "RTP": 0.99, "Strategy_Tip": "Play full-pay versions only."},
-    {"Name": "Cleopatra", "Min_Bet": 0.20, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.93, "Strategy_Tip": "Watch for bonus symbol frequency."},
-    {"Name": "Miss Kitty", "Min_Bet": 0.50, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.94, "Strategy_Tip": "Look for stacked wilds early."},
-    {"Name": "Caveman Keno", "Min_Bet": 0.25, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.92, "Strategy_Tip": "Use patterns and bonus eggs."},
-    {"Name": "Buffalo Gold", "Min_Bet": 0.40, "Volatility": "High", "Bonus_Feature": "Yes", "RTP": 0.90, "Strategy_Tip": "High volatility, big bonus potential."}
-]
+@st.cache_data
+def load_game_data():
+    with open("profit_hopper_assets/enhanced_game_data_full.json", "r") as f:
+        return pd.DataFrame(json.load(f))
 
-# Sidebar Inputs
-st.sidebar.header("Session Settings")
-bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=10, value=100)
-sessions = st.sidebar.slider("Number of Sessions", 1, 10, 5)
+games_df = load_game_data()
 
-session_unit = round(bankroll / sessions, 2)
-max_bet = round(session_unit * 0.15, 2)
+st.sidebar.title("Session Setup")
+total_bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=10, value=100, step=10)
+num_sessions = st.sidebar.slider("Number of Sessions", 1, 20, 5)
+session_bankroll = round(total_bankroll / num_sessions, 2)
+max_bet = round(session_bankroll / 4, 2)
 
-# Game Recommendation Logic
-def get_stop_loss(min_bet, volatility, session_unit):
-    spins = 8 if volatility == "Low" else 10 if volatility == "Medium" else 12
-    base_stop = min_bet * spins
-    max_allowed = session_unit * 0.75
-    return round(min(base_stop, max_allowed), 2)
+def analyze_games(df, session_bankroll, max_bet):
+    filtered = df.copy()
+    filtered["Min_Bet_OK"] = filtered["Denomination_Options"].apply(lambda opts: any(b <= max_bet for b in opts))
+    filtered = filtered[filtered["Min_Bet_OK"]]
+    filtered["Stop_Loss"] = filtered["Denomination_Options"].apply(lambda opts: min([b for b in opts if b <= max_bet], default=max_bet) * 4)
+    filtered = filtered[filtered["Stop_Loss"] < session_bankroll]
+    volatility_map = {"Low": 3, "Medium": 2, "High": 1, "Very High": 0}
+    filtered["Vol_Score"] = filtered["Volatility"].map(volatility_map).fillna(1)
+    filtered["Score"] = (
+        filtered["RTP"] * 100
+        + filtered["Bonus_Frequency"] * 100
+        + filtered["Vol_Score"] * 5
+    )
+    sorted_games = filtered.sort_values(by="Score", ascending=False).head(num_sessions + 2)
+    return sorted_games
 
-def recommend_games(session_unit, max_bet, sessions):
-    recs = []
-    for game in full_game_db:
-        if game['Min_Bet'] > max_bet:
-            continue
-        stop_loss = get_stop_loss(game['Min_Bet'], game['Volatility'], session_unit)
-        score = 0
-        if game['Volatility'] == "Low": score += 2
-        elif game['Volatility'] == "Medium": score += 1
-        if game['Bonus_Feature'] == "Yes": score += 1
-        if game['RTP'] >= 0.96: score += 2
-        recs.append({
-            "Name": game["Name"],
-            "Min_Bet": game["Min_Bet"],
-            "Stop_Loss": stop_loss,
-            "Strategy_Tip": game["Strategy_Tip"],
-            "Score": score
-        })
-    return sorted(recs, key=lambda x: x["Score"], reverse=True)[:sessions + 2]
+recommended_games = analyze_games(games_df, session_bankroll, max_bet)
 
-# Tabs
-tab1, tab2, tab3 = st.tabs(["🎯 Game Plan", "📝 Tracker", "📊 Summary"])
+tab1, tab2, tab3 = st.tabs(["Game Plan", "Tracker", "Summary"])
 
-# Game Plan Tab
 with tab1:
-    st.markdown("### 📊 Game Plan Summary")
-    st.markdown(f"**Bankroll:** ${bankroll:.2f} | **Sessions:** {sessions} | **Session Bankroll:** ${session_unit:.2f} | **Max Bet/Game:** ${max_bet:.2f}")
-    if "log" in st.session_state and st.session_state.log:
-        total_in = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Loss")
-        total_out = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Win")
-        net = round(total_out - total_in, 2)
-    else:
-        total_in = total_out = net = 0.00
-    st.markdown(f"**💸 In:** ${total_in:.2f}  **💰 Out:** ${total_out:.2f}  **📈 Net:** ${net:.2f}")
-    st.divider()
+    st.markdown("### Game Plan Summary")
+    col1, col2 = st.columns(2)
+    col1.metric("Total Bankroll", f"${total_bankroll}")
+    col2.metric("Sessions", f"{num_sessions}")
+    col1.metric("Session Bankroll", f"${session_bankroll}")
+    col2.metric("Max Bet", f"${max_bet}")
 
-    st.subheader("📋 Recommended Games to Play")
-    recs = recommend_games(session_unit, max_bet, sessions)
-    for i, g in enumerate(recs, 1):
-        st.markdown(f"**{i}. {g['Name']}**")
-        st.markdown(f"🎰 Min Bet: ${g['Min_Bet']:.2f} | 🛑 Stop-Loss: ${g['Stop_Loss']:.2f}")
-        st.markdown(f"📝 {g['Strategy_Tip']}")
-        st.markdown("---")
+    st.markdown("---")
+    st.markdown("### Recommended Games")
 
-# Tracker Tab
+    for idx, row in recommended_games.iterrows():
+        game_output = "**{}**
+Min Bet: ${:.2f} | Stop-Loss: ${:.2f}
+Note: {}".format(
+            row['Name'], row['Min_Bet'], row['Stop_Loss'], row['Strategy_Tip']
+        )
+        st.markdown(game_output)
+
 with tab2:
-    st.subheader("🎯 Session Log")
-    if "log" not in st.session_state:
-        st.session_state.log = []
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        result = st.selectbox("Result", ["Win", "Loss"])
-    with col2:
-        amount = st.number_input("Amount ($)", min_value=0.0, value=0.0)
-    with col3:
-        game = st.text_input("Game Played")
-    if st.button("Add Entry"):
-        timestamp = datetime.datetime.now().astimezone().strftime("%Y-%m-%d %I:%M %p")
-        st.session_state.log.append({
-            "Time": timestamp,
-            "Game": game,
-            "Result": result,
-            "Amount": amount
-        })
-    if st.session_state.log:
-        df = pd.DataFrame(st.session_state.log)
-        st.dataframe(df)
+    st.markdown("### Session Tracker")
+    with st.form("session_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        game = col1.text_input("Game Played")
+        amount_in = col1.number_input("Amount In ($)", min_value=0.0, value=0.0, step=0.25)
+        amount_out = col2.number_input("Amount Out ($)", min_value=0.0, value=0.0, step=0.25)
+        bonus = col2.checkbox("Bonus Hit?")
+        followed_strategy = col2.checkbox("Followed Strategy?")
+        submitted = st.form_submit_button("Add Entry")
 
-# Summary Tab
+        if submitted and game:
+            tz = datetime.now().astimezone().tzinfo
+            entry_time = datetime.now(tz).strftime('%Y-%m-%d %I:%M %p')
+            new_entry = {
+                "Time": entry_time,
+                "Game": game,
+                "In": amount_in,
+                "Out": amount_out,
+                "Bonus": bonus,
+                "Followed": followed_strategy
+            }
+            if "session_log" not in st.session_state:
+                st.session_state["session_log"] = []
+            st.session_state["session_log"].append(new_entry)
+
+    if "session_log" in st.session_state and st.session_state["session_log"]:
+        st.markdown("#### Logged Sessions")
+        st.dataframe(pd.DataFrame(st.session_state["session_log"]))
+
 with tab3:
-    st.subheader("📊 Bankroll Summary")
-    if st.session_state.log:
-        total_in = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Loss")
-        total_out = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Win")
-        net = round(total_out - total_in, 2)
-        st.metric("💸 Total In (Spent)", f"${total_in:.2f}")
-        st.metric("💰 Total Out (Winnings)", f"${total_out:.2f}")
-        st.metric("📈 Net Profit", f"${net:.2f}")
+    st.markdown("### Bankroll Summary")
+    if "session_log" in st.session_state:
+        df = pd.DataFrame(st.session_state["session_log"])
+        total_in = df["In"].sum()
+        total_out = df["Out"].sum()
+        net = total_out - total_in
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total In", f"${total_in:.2f}")
+        col2.metric("Total Out", f"${total_out:.2f}")
+        col3.metric("Net", f"${net:.2f}")
     else:
-        st.info("No session data yet.")
+        st.info("No sessions logged yet.")
