@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.markdown("### 🎰 Profit Hopper v1.5.3 — Smart Bankroll Optimizer")
+st.markdown("### 🎰 Profit Hopper v1.5.4 — Smart Bankroll Optimizer")
 
 # Game dataset with varied examples
 full_game_db = [
@@ -21,13 +21,7 @@ bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=10, value=100
 sessions = st.sidebar.slider("Number of Sessions", 1, 10, 5)
 
 session_unit = round(bankroll / sessions, 2)
-max_bet = round(session_unit * 0.25, 2)
-
-# Header Summary (corrected f-string formatting)
-st.markdown(f'''
-#### 💼 Bankroll Summary
-**Total Bankroll:** ${bankroll:.2f} | **Sessions:** {sessions} | **Per Session:** ${session_unit:.2f} | **Max Bet/Game:** ${max_bet:.2f}
-''')
+max_bet = round(session_unit * 0.15, 2)
 
 # Game Recommendation Logic
 def get_stop_loss(min_bet, volatility, session_unit):
@@ -59,8 +53,19 @@ def recommend_games(session_unit, max_bet, sessions):
 # Tabs
 tab1, tab2, tab3 = st.tabs(["🎯 Game Plan", "📝 Tracker", "📊 Summary"])
 
-# Game Plan
+# Game Plan Tab
 with tab1:
+    st.markdown("### 📊 Game Plan Summary")
+    st.markdown(f"**Bankroll:** ${bankroll:.2f} | **Sessions:** {sessions} | **Session Bankroll:** ${session_unit:.2f} | **Max Bet/Game:** ${max_bet:.2f}")
+    if "log" in st.session_state and st.session_state.log:
+        total_in = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Loss")
+        total_out = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Win")
+        net = round(total_out - total_in, 2)
+    else:
+        total_in = total_out = net = 0.00
+    st.markdown(f"**💸 In:** ${total_in:.2f}  **💰 Out:** ${total_out:.2f}  **📈 Net:** ${net:.2f}")
+    st.divider()
+
     st.subheader("📋 Recommended Games to Play")
     recs = recommend_games(session_unit, max_bet, sessions)
     for i, g in enumerate(recs, 1):
