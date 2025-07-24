@@ -1,41 +1,77 @@
 
+# Profit Hopper App - Enhanced Version
+# Version: 3.0.2
+# Updated: 2025-07-24 05:58 PM
+
 import streamlit as st
 import pandas as pd
+import json
+from datetime import datetime
+import pytz
 
-# Sample game list (replace with actual game logic)
-games = ["Game A", "Game B", "Game C"]
 
-# Set initial session state if not already set
-if "session_log" not in st.session_state:
-    st.session_state["session_log"] = []
+@st.cache_data
+def get_recommended_games(game_df, session_bankroll, max_bet):
 
-st.title("🎰 Profit Hopper - Casino Strategy Assistant")
 
-with st.form("session_form"):
-    game = st.selectbox("🎮 Select a game", games)
-    bankroll = st.number_input("💰 Bankroll ($)", min_value=1, step=1)
-    max_bet = st.number_input("🎯 Max Bet ($)", min_value=1, step=1)
-    stop_loss = st.number_input("🛑 Stop-Loss ($)", min_value=1, step=1)
-    session_notes = st.text_area("📝 Notes (optional)", height=100)
-    submitted = st.form_submit_button("➕ Add Session")
 
-    if submitted and game:
-        new_entry = {
+    filtered = filtered[filtered["Min_Bet_OK"]]
+    filtered = filtered[filtered["Stop_Loss"] < session_bankroll]
+    volatility_map = {"Low": 3, "Medium": 2, "High": 1, "Very High": 0}
+    filtered["Score"] = (
+        filtered["RTP"] * 100
+        + filtered["Bonus_Frequency"] * 100
+        + filtered["Vol_Score"] * 5
+    )
+    return sorted_games
+
+
+
+    with tab1:
+        for idx, row in recommended_games.iterrows():
+            game_output = f"""**{row['Name']}**
+🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
+📝 {row['Strategy_Tip']}"""
+            st.markdown(game_output)
+
+    with tab2:
+        if submitted and game:
+            new_entry = {
+            "Time": entry_time,
             "Game": game,
-            "Bankroll": bankroll,
-            "Max Bet": max_bet,
-            "Stop-Loss": stop_loss,
-            "Notes": session_notes
-        }
-        st.session_state["session_log"].append(new_entry)
-        st.success("Session added!")
-
-if st.session_state["session_log"]:
-    st.subheader("📊 Session Log")
-    df = pd.DataFrame(st.session_state["session_log"])
-    st.dataframe(df, use_container_width=True)
-
-    with st.expander("🗑️ Clear Log"):
-        if st.button("Clear All Sessions"):
+            "In": amount_in,
+            "Out": amount_out,
+            "Bonus": bonus,
+            "Followed": followed_strategy
+            }
+            if "session_log" not in st.session_state:
             st.session_state["session_log"] = []
-            st.success("All sessions cleared.")
+            if "session_log" in st.session_state and st.session_state["session_log"]:
+            with tab3:
+            if "session_log" in st.session_state:
+            net = total_out - total_in
+            else:
+            with tab1:
+        for idx, row in recommended_games.iterrows():
+            game_output = f"""**{row['Name']}**
+🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
+📝 {row['Strategy_Tip']}"""
+            st.markdown(game_output)
+
+with tab2:
+        if submitted and game:
+            new_entry = {
+            "Time": entry_time,
+            "Game": game,
+            "In": amount_in,
+            "Out": amount_out,
+            "Bonus": bonus,
+            "Followed": followed_strategy
+            }
+            if "session_log" not in st.session_state:
+            st.session_state["session_log"] = []
+            if "session_log" in st.session_state and st.session_state["session_log"]:
+with tab3:
+    if "session_log" in st.session_state:
+        net = total_out - total_in
+    else:
