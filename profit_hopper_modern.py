@@ -4,18 +4,18 @@ import datetime
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.markdown("### 🎰 Profit Hopper v1.5.2 — Smart Bankroll Optimizer")
+st.markdown("### 🎰 Profit Hopper v1.5.3 — Smart Bankroll Optimizer")
 
-# Internal Game Dataset (simplified example with fallbacks)
+# Game dataset with varied examples
 full_game_db = [
+    {"Name": "Jacks or Better", "Min_Bet": 0.25, "Volatility": "Low", "Bonus_Feature": "No", "RTP": 0.99, "Strategy_Tip": "Play full-pay versions only."},
     {"Name": "Cleopatra", "Min_Bet": 0.20, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.93, "Strategy_Tip": "Watch for bonus symbol frequency."},
     {"Name": "Miss Kitty", "Min_Bet": 0.50, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.94, "Strategy_Tip": "Look for stacked wilds early."},
-    {"Name": "Jacks or Better", "Min_Bet": 0.25, "Volatility": "Low", "Bonus_Feature": "No", "RTP": 0.99, "Strategy_Tip": "Play full-pay versions only."},
     {"Name": "Caveman Keno", "Min_Bet": 0.25, "Volatility": "Medium", "Bonus_Feature": "Yes", "RTP": 0.92, "Strategy_Tip": "Use patterns and bonus eggs."},
-    {"Name": "Buffalo Gold", "Min_Bet": 0.40, "Volatility": "High", "Bonus_Feature": "Yes", "RTP": 0.90, "Strategy_Tip": "High volatility, big bonus potential."},
+    {"Name": "Buffalo Gold", "Min_Bet": 0.40, "Volatility": "High", "Bonus_Feature": "Yes", "RTP": 0.90, "Strategy_Tip": "High volatility, big bonus potential."}
 ]
 
-# Sidebar Inputs with validation
+# Sidebar Inputs
 st.sidebar.header("Session Settings")
 bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=10, value=100)
 sessions = st.sidebar.slider("Number of Sessions", 1, 10, 5)
@@ -23,45 +23,55 @@ sessions = st.sidebar.slider("Number of Sessions", 1, 10, 5)
 session_unit = round(bankroll / sessions, 2)
 max_bet = round(session_unit * 0.25, 2)
 
+# Header Summary (corrected f-string formatting)
+st.markdown(f'''
+#### 💼 Bankroll Summary
+**Total Bankroll:** ${bankroll:.2f} | **Sessions:** {sessions} | **Per Session:** ${session_unit:.2f} | **Max Bet/Game:** ${max_bet:.2f}
+''')
+
 # Game Recommendation Logic
-def recommend_games(bankroll, session_unit, max_bet, sessions):
-    recommendations = []
+def get_stop_loss(min_bet, volatility, session_unit):
+    spins = 8 if volatility == "Low" else 10 if volatility == "Medium" else 12
+    base_stop = min_bet * spins
+    max_allowed = session_unit * 0.75
+    return round(min(base_stop, max_allowed), 2)
+
+def recommend_games(session_unit, max_bet, sessions):
+    recs = []
     for game in full_game_db:
-        min_bet = game.get("Min_Bet", 0.01)
-        if min_bet <= max_bet:
-            score = 0
-            if game.get("Volatility") == "Low": score += 2
-            elif game.get("Volatility") == "Medium": score += 1
-            if game.get("Bonus_Feature") == "Yes": score += 1
-            if game.get("RTP", 0) > 0.95: score += 2
-            stop_loss = round(max(min(session_unit * 0.5, min_bet * 4), min_bet * 3), 2)
-            recommendations.append({
-                "Name": game.get("Name", "Unknown"),
-                "Min_Bet": min_bet,
-                "Stop_Loss": stop_loss,
-                "Strategy_Tip": game.get("Strategy_Tip", "No strategy tip provided."),
-                "Score": score
-            })
-    sorted_games = sorted(recommendations, key=lambda x: x["Score"], reverse=True)
-    return sorted_games[:sessions + 2]
+        if game['Min_Bet'] > max_bet:
+            continue
+        stop_loss = get_stop_loss(game['Min_Bet'], game['Volatility'], session_unit)
+        score = 0
+        if game['Volatility'] == "Low": score += 2
+        elif game['Volatility'] == "Medium": score += 1
+        if game['Bonus_Feature'] == "Yes": score += 1
+        if game['RTP'] >= 0.96: score += 2
+        recs.append({
+            "Name": game["Name"],
+            "Min_Bet": game["Min_Bet"],
+            "Stop_Loss": stop_loss,
+            "Strategy_Tip": game["Strategy_Tip"],
+            "Score": score
+        })
+    return sorted(recs, key=lambda x: x["Score"], reverse=True)[:sessions + 2]
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["🎯 Game Plan", "📝 Tracker", "📊 Summary"])
 
-# Game Plan Tab
+# Game Plan
 with tab1:
-    st.subheader("Recommended Games")
-    st.markdown(f"**Session Unit:** ${session_unit:.2f} ∣ **Max Bet:** ${max_bet:.2f}")
-    recommendations = recommend_games(bankroll, session_unit, max_bet, sessions)
-    for i, game in enumerate(recommendations, 1):
-        st.markdown(f"**{i}. {game['Name']}**")
-        st.markdown(f"🎰 Min Bet: ${game['Min_Bet']:.2f} ∣ 🛑 Stop-Loss: ${game['Stop_Loss']:.2f}")
-        st.markdown(f"📝 {game['Strategy_Tip']}")
+    st.subheader("📋 Recommended Games to Play")
+    recs = recommend_games(session_unit, max_bet, sessions)
+    for i, g in enumerate(recs, 1):
+        st.markdown(f"**{i}. {g['Name']}**")
+        st.markdown(f"🎰 Min Bet: ${g['Min_Bet']:.2f} | 🛑 Stop-Loss: ${g['Stop_Loss']:.2f}")
+        st.markdown(f"📝 {g['Strategy_Tip']}")
         st.markdown("---")
 
 # Tracker Tab
 with tab2:
-    st.subheader("Session Log")
+    st.subheader("🎯 Session Log")
     if "log" not in st.session_state:
         st.session_state.log = []
     col1, col2, col3 = st.columns(3)
@@ -85,7 +95,7 @@ with tab2:
 
 # Summary Tab
 with tab3:
-    st.subheader("Bankroll Summary")
+    st.subheader("📊 Bankroll Summary")
     if st.session_state.log:
         total_in = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Loss")
         total_out = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Win")
