@@ -72,7 +72,7 @@ st.markdown(
 
 st.markdown("### 🎯 Game Recommendations")
 num_needed = remaining_sessions + 2
-recommended = get_recommended_games(session_unit, max_bet, risk, num_needed)
+recommended = get_recommended_games(session_unit, max_bet, risk, num_needed + 3)
 
 if recommended:
     for idx, game in enumerate(recommended, 1):
@@ -91,8 +91,11 @@ with tab1:
         game = st.text_input("Game / Machine Name")
         amount_in = st.number_input("Amount Inserted", min_value=0.0, step=1.0)
         amount_out = st.number_input("Cashout Amount", min_value=0.0, step=1.0)
-        bonus_hit = st.radio("Bonus Hit?", ["Yes", "No"], horizontal=True)
-        rule_followed = st.radio("Followed Strategy?", ["Yes", "No"], horizontal=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            bonus_hit = st.radio("Bonus Hit?", ["Yes", "No"], horizontal=True)
+        with col2:
+            rule_followed = st.radio("Followed Strategy?", ["Yes", "No"], horizontal=True)
         notes = st.text_area("Notes")
         submitted = st.form_submit_button("Add Session")
         if submitted:
