@@ -51,15 +51,6 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
             }
             if "session_log" not in st.session_state:
                 st.session_state["session_log"] = []
-            if "session_log" in st.session_state and st.session_state["session_log"]:
-                with tab3:
-            if "session_log" in st.session_state:
-                net = total_out - total_in
-            else:
-                st.write("No session data available.")
-            game_output = f"""**{row['Name']}**
-            🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
-            📝 {row['Strategy_Tip']}"""
             st.markdown(game_output)
 
 with tab2:
@@ -78,4 +69,13 @@ with tab2:
 with tab3:
     if "session_log" in st.session_state:
         net = total_out - total_in
-    else:
+    else:    with tab3:
+        if "session_log" in st.session_state and st.session_state["session_log"]:
+            df = pd.DataFrame(st.session_state["session_log"])
+            st.dataframe(df, use_container_width=True)
+            total_in = df['In'].sum()
+            total_out = df['Out'].sum()
+            net = total_out - total_in
+            st.markdown(f"**Money In:** ${total_in:.2f} | **Money Out:** ${total_out:.2f} | **Net:** ${net:.2f}")
+        else:
+            st.write("No session data available.")
