@@ -29,7 +29,7 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
 
     with tab1:
         for idx, row in recommended_games.iterrows():
-        game_output = f"""**{row['Name']}**
+            game_output = f"""**{row['Name']}**
 🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
 📝 {row['Strategy_Tip']}"""
             st.markdown(game_output)
@@ -52,7 +52,7 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
             net = total_out - total_in
             else:
             with tab1:
-            for idx, row in recommended_games.iterrows():
+        for idx, row in recommended_games.iterrows():
             game_output = f"""**{row['Name']}**
 🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
 📝 {row['Strategy_Tip']}"""
