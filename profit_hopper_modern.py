@@ -55,13 +55,12 @@ with tab1:
     st.markdown("---")
     st.markdown("### Recommended Games")
 
-    for idx, row in recommended_games.iterrows():
-        st.markdown(
-            "**{}**  
-🎰 Min Bet: ${} | 🛑 Stop-Loss: ${:.2f}  
-📝 {}".format(
-                row['Name'], row['Min_Bet'], row['Stop_Loss'], row['Strategy_Tip']
-            )
+    
+for idx, row in recommended_games.iterrows():
+    game_output = f"""**{row['Name']}**
+🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
+📝 {row['Strategy_Tip']}"""
+    st.markdown(game_output)
         )
 
 with tab2:
