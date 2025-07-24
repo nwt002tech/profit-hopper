@@ -35,48 +35,42 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
             st.markdown(game_output)
 
     with tab2:
-
-    if submitted and game:
-    new_entry = {
-    "Time": entry_time,
-    "Game": game,
-    "In": amount_in,
-    "Out": amount_out,
-    "Bonus": bonus,
-    "Followed": followed_strategy
-    }
-    if "session_log" not in st.session_state:
-    st.session_state["session_log"] = []
-
-    if "session_log" in st.session_state and st.session_state["session_log"]:
-
-    with tab3:
-    if "session_log" in st.session_state:
-    net = total_out - total_in
-    else:
-    with tab1:
+        if submitted and game:
+        new_entry = {
+        "Time": entry_time,
+        "Game": game,
+        "In": amount_in,
+        "Out": amount_out,
+        "Bonus": bonus,
+        "Followed": followed_strategy
+        }
+        if "session_log" not in st.session_state:
+        st.session_state["session_log"] = []
+        if "session_log" in st.session_state and st.session_state["session_log"]:
+        with tab3:
+        if "session_log" in st.session_state:
+        net = total_out - total_in
+        else:
+        with tab1:
         for idx, row in recommended_games.iterrows():
-            game_output = f"""**{row['Name']}**
+        game_output = f"""**{row['Name']}**
 🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
 📝 {row['Strategy_Tip']}"""
             st.markdown(game_output)
 
 with tab2:
-
         if submitted and game:
-            new_entry = {
-                "Time": entry_time,
-                "Game": game,
-                "In": amount_in,
-                "Out": amount_out,
-                "Bonus": bonus,
-                "Followed": followed_strategy
-            }
-            if "session_log" not in st.session_state:
-                st.session_state["session_log"] = []
-
-    if "session_log" in st.session_state and st.session_state["session_log"]:
-
+        new_entry = {
+        "Time": entry_time,
+        "Game": game,
+        "In": amount_in,
+        "Out": amount_out,
+        "Bonus": bonus,
+        "Followed": followed_strategy
+        }
+        if "session_log" not in st.session_state:
+        st.session_state["session_log"] = []
+        if "session_log" in st.session_state and st.session_state["session_log"]:
 with tab3:
     if "session_log" in st.session_state:
         net = total_out - total_in
