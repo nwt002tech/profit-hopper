@@ -53,7 +53,6 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
                 st.session_state["session_log"] = []
             if "session_log" in st.session_state and st.session_state["session_log"]:
                 with tab3:
-        with tab3:
             if "session_log" in st.session_state:
                 net = total_out - total_in
             else:
