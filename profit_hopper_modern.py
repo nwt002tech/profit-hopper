@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 
 # === Embedded Game Dataset with Stop-Loss ===
-game_data = [{"Name": "88 Fortunes", "Min_Bet": 0.88, "RTP": 96.0, "Volatility": "Medium-High", "Notes": "Look for gold symbols filled and pots nearly full."}, {"Name": "Cleopatra", "Min_Bet": 0.2, "RTP": 95.5, "Volatility": "Medium", "Notes": "Watch for bonus symbol frequency in recent spins."}, {"Name": "Buffalo Gold", "Min_Bet": 0.6, "RTP": 94.5, "Volatility": "High", "Notes": "Check if coin bonus triggers frequently."}, {"Name": "Video Keno", "Min_Bet": 0.25, "RTP": 92.0, "Volatility": "Low", "Notes": "Use overlapping number pattern strategies."}]
+game_data = [{"Name": "88 Fortunes", "Min_Bet": 0.88, "RTP": 96.0, "Volatility": "Medium-High", "Notes": "Look for gold symbols filled and jackpot pot nearly full."}, {"Name": "Cleopatra", "Min_Bet": 0.2, "RTP": 95.5, "Volatility": "Medium", "Notes": "Watch for bonus symbol frequency and high wild activity."}, {"Name": "Buffalo Gold", "Min_Bet": 0.6, "RTP": 94.5, "Volatility": "High", "Notes": "Better when coin bonuses appear regularly. High volatility."}, {"Name": "Quick Hit Platinum", "Min_Bet": 0.3, "RTP": 95.0, "Volatility": "Medium-High", "Notes": "Check meter progression and number of visible symbols."}, {"Name": "Dragon Link", "Min_Bet": 0.5, "RTP": 95.0, "Volatility": "High", "Notes": "Preferable when fireball hold & spin occurs frequently."}, {"Name": "Dancing Drums", "Min_Bet": 0.88, "RTP": 96.1, "Volatility": "Medium-High", "Notes": "Best when drums appear often and gold pot is full."}, {"Name": "Lightning Link", "Min_Bet": 0.5, "RTP": 94.8, "Volatility": "High", "Notes": "Check progressive meter size and bonus rate."}, {"Name": "Video Keno", "Min_Bet": 0.25, "RTP": 92.0, "Volatility": "Low", "Notes": "Use overlapping patterns and slow progression."}, {"Name": "Miss Kitty", "Min_Bet": 0.5, "RTP": 95.1, "Volatility": "Medium", "Notes": "Better play when wild symbols are frequent early."}, {"Name": "Whales of Cash", "Min_Bet": 0.4, "RTP": 94.3, "Volatility": "Medium", "Notes": "Look for stacked symbols and bonus frequency."}]
 
 def score_game(game, session_unit, risk_level, max_bet):
     if game["Min_Bet"] > max_bet:
@@ -33,7 +33,7 @@ def get_recommended_games(session_unit, max_bet, risk, num_needed):
         if score > 0:
             scored.append((score, game))
     sorted_games = sorted(scored, key=lambda x: x[0], reverse=True)
-    return [g for _, g in scored][:num_needed]
+    return [g for _, g in sorted_games][:num_needed]
 
 st.set_page_config(page_title="Profit Hopper", layout="centered")
 
@@ -71,8 +71,8 @@ st.markdown(
 )
 
 st.markdown("### 🎯 Game Recommendations")
-num_needed = remaining_sessions + 2
-recommended = get_recommended_games(session_unit, max_bet, risk, num_needed + 3)
+num_needed = remaining_sessions + 3  # Always list more than needed
+recommended = get_recommended_games(session_unit, max_bet, risk, num_needed)
 
 if recommended:
     for idx, game in enumerate(recommended, 1):
