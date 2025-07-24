@@ -1,3 +1,8 @@
+# Profit Hopper App
+# Version: 3.3.0
+# Fully restored and mobile-optimized build with full feature set
+# Includes: Game Plan tab, Session Tracker, Bankroll Summary, External Game DB, Stop-Loss Analytics
+
 
 # Profit Hopper App - Enhanced Version
 # Version: 3.0.2
