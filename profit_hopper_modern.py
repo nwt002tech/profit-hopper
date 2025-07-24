@@ -53,11 +53,11 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
                 st.session_state["session_log"] = []
             if "session_log" in st.session_state and st.session_state["session_log"]:
                 with tab3:
+        with tab3:
             if "session_log" in st.session_state:
-            net = total_out - total_in
+                net = total_out - total_in
             else:
-            with tab1:
-        for idx, row in recommended_games.iterrows():
+                st.write("No session data available.")
             game_output = f"""**{row['Name']}**
             🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
             📝 {row['Strategy_Tip']}"""
