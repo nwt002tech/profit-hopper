@@ -19,9 +19,10 @@ def get_recommended_games(game_df, session_bankroll, max_bet):
     filtered = filtered[filtered["Stop_Loss"] < session_bankroll]
     volatility_map = {"Low": 3, "Medium": 2, "High": 1, "Very High": 0}
     filtered["Score"] = (
-    filtered["RTP"] * 100
-    + filtered["Bonus_Frequency"] * 100
-    + filtered["Vol_Score"] * 5
+        filtered["RTP"] * 100
+        + filtered["Bonus_Frequency"] * 100
+        + filtered["Vol_Score"] * 5
+    )
     return sorted_games
 
 
