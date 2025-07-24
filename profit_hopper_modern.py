@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-APP_VERSION = "v3.4.1"
+APP_VERSION = "v3.4.2"
 
 @st.cache_data
 def load_games():
@@ -22,14 +22,14 @@ def recommend_games(games_df, session_bankroll, max_bet):
         df["Volatility"].map(lambda v: 0.3 if v == "Low" else (0.2 if v == "Medium" else 0.1))
     )
     df["Stop_Loss"] = session_bankroll * 0.6
-    df["Stop_Loss"] = df[["Stop_Loss", "Min_Bet"]].max(axis=1).round(2)
+    df["Stop_Loss"] = pd.to_numeric(df[["Stop_Loss", "Min_Bet"]].max(axis=1), errors="coerce").round(2)
     return df.sort_values("Score", ascending=False).reset_index(drop=True)
 
 if "session_log" not in st.session_state:
     st.session_state["session_log"] = []
 
 st.sidebar.title("🎯 Profit Hopper")
-st.sidebar.markdown("**App Version:** v3.4.1")
+st.sidebar.markdown("**App Version:** v3.4.2")
 total_bankroll = st.sidebar.number_input("Total Bankroll", value=100.0, step=10.0)
 sessions = st.sidebar.number_input("Number of Sessions", value=5, step=1)
 session_bankroll = round(total_bankroll / sessions, 2)
