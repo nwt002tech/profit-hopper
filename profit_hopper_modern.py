@@ -61,6 +61,12 @@ for idx, row in recommended_games.iterrows():
 🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
 📝 {row['Strategy_Tip']}"""
     st.markdown(game_output)
+        st.markdown(
+            "**{}**  
+🎰 Min Bet: ${} | 🛑 Stop-Loss: ${:.2f}  
+📝 {}".format(
+                row['Name'], row['Min_Bet'], row['Stop_Loss'], row['Strategy_Tip']
+            )
         )
 
 with tab2:
