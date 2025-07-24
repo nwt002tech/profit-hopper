@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.markdown("### 🎰 Profit Hopper v1.5.0 — Smart Bankroll Optimizer")
+st.markdown("### 🎰 Profit Hopper v1.5.1 — Smart Bankroll Optimizer")
 
 # Internal Game Dataset
 full_game_db = [
@@ -90,16 +90,15 @@ full_game_db = [
   }
 ]
 
-# User Inputs
-bankroll = st.number_input("Enter Total Bankroll ($)", min_value=10, value=100)
-sessions = st.slider("Number of Sessions", 1, 10, 5)
+# Sidebar Inputs
+st.sidebar.header("Session Settings")
+bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=10, value=100)
+sessions = st.sidebar.slider("Number of Sessions", 1, 10, 5)
 
 session_unit = round(bankroll / sessions, 2)
 max_bet = round(session_unit * 0.25, 2)
 
-st.markdown("**Session Bankroll:** ${0:.2f} ∣ **Max Bet/Game:** ${1:.2f}".format(session_unit, max_bet))
-
-# Game Analysis
+# Recommendation logic
 def recommend_games(bankroll, session_unit, max_bet):
     recommendations = []
     for game in full_game_db:
@@ -109,7 +108,9 @@ def recommend_games(bankroll, session_unit, max_bet):
             elif game['Volatility'] == "Medium": score += 1
             if game['Bonus_Feature'] == "Yes": score += 1
             if game['RTP'] > 0.95: score += 2
-            stop_loss = round(min(session_unit * 0.75, session_unit - 1), 2)
+            # Improved stop-loss logic
+            calculated_stop = min(session_unit * 0.5, game['Min_Bet'] * 4)
+            stop_loss = round(max(calculated_stop, game['Min_Bet'] * 3), 2)
             recommendations.append({
                 "Name": game['Name'],
                 "Min_Bet": game['Min_Bet'],
@@ -117,16 +118,56 @@ def recommend_games(bankroll, session_unit, max_bet):
                 "Strategy_Tip": game['Strategy_Tip'],
                 "Score": score
             })
-
     sorted_games = sorted(recommendations, key=lambda x: x["Score"], reverse=True)
     return sorted_games[:sessions + 2]
 
-# Display Recommendations
-st.subheader("🎯 Recommended Games to Play")
-recommended = recommend_games(bankroll, session_unit, max_bet)
+# Tabs
+tab1, tab2, tab3 = st.tabs(["🎯 Game Plan", "📝 Tracker", "📊 Summary"])
 
-for i, game in enumerate(recommended, 1):
-    st.markdown(f"**{i}. {game['Name']}**")
-    st.markdown(f"🎰 Min Bet: ${game['Min_Bet']} ∣ 🛑 Stop-Loss: ${game['Stop_Loss']}")
-    st.markdown(f"📝 {game['Strategy_Tip'] or 'No special strategy'}")
-    st.markdown("---")
+# Game Plan Tab
+with tab1:
+    st.subheader("Recommended Games")
+    st.markdown("**Session Unit:** $0.00 ∣ **Max Bet:** $1.00".format(session_unit, max_bet))
+    recommendations = recommend_games(bankroll, session_unit, max_bet)
+    for i, game in enumerate(recommendations, 1):
+        st.markdown("**0. 1**".format(i, game['Name']))
+        st.markdown("🎰 Min Bet: $0.00 ∣ 🛑 Stop-Loss: $1.00".format(game['Min_Bet'], game['Stop_Loss']))
+        st.markdown("📝 0".format(game['Strategy_Tip'] or 'No special strategy'))
+        st.markdown("---")
+
+# Tracker Tab
+with tab2:
+    st.subheader("Session Log")
+    if "log" not in st.session_state:
+        st.session_state.log = []
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        result = st.selectbox("Result", ["Win", "Loss"])
+    with col2:
+        amount = st.number_input("Amount ($)", min_value=0.0, value=0.0)
+    with col3:
+        game = st.text_input("Game Played")
+    if st.button("Add Entry"):
+        timestamp = datetime.datetime.now().astimezone().strftime("%Y-%m-%d %I:%M %p")
+        st.session_state.log.append({
+            "Time": timestamp,
+            "Game": game,
+            "Result": result,
+            "Amount": amount
+        })
+    if st.session_state.log:
+        df = pd.DataFrame(st.session_state.log)
+        st.dataframe(df)
+
+# Summary Tab
+with tab3:
+    st.subheader("Bankroll Summary")
+    if st.session_state.log:
+        total_in = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Loss")
+        total_out = sum(x['Amount'] for x in st.session_state.log if x['Result'] == "Win")
+        net = round(total_out - total_in, 2)
+        st.metric("💸 Total In (Spent)", "$0.00".format(total_in))
+        st.metric("💰 Total Out (Winnings)", "$0.00".format(total_out))
+        st.metric("📈 Net Profit", "$0.00".format(net))
+    else:
+        st.info("No session data yet.")
