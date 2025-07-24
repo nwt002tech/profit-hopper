@@ -1,6 +1,7 @@
+
 # Profit Hopper App - Enhanced Version
-# Version: 3.0.1
-# Updated: 2025-07-24 05:48 PM
+# Version: 3.0.2
+# Updated: 2025-07-24 05:58 PM
 
 import streamlit as st
 import pandas as pd
@@ -55,12 +56,13 @@ with tab1:
     st.markdown("### Recommended Games")
 
     for idx, row in recommended_games.iterrows():
-        game_output = "**{}**
-Min Bet: ${:.2f} | Stop-Loss: ${:.2f}
-Note: {}".format(
-            row['Name'], row['Min_Bet'], row['Stop_Loss'], row['Strategy_Tip']
+        st.markdown(
+            "**{}**  
+🎰 Min Bet: ${} | 🛑 Stop-Loss: ${:.2f}  
+📝 {}".format(
+                row['Name'], row['Min_Bet'], row['Stop_Loss'], row['Strategy_Tip']
+            )
         )
-        st.markdown(game_output)
 
 with tab2:
     st.markdown("### Session Tracker")
