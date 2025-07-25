@@ -14,7 +14,10 @@ max_bet = session_bankroll * 0.25
 # Filter and score games
 def recommend_games(df, session_bankroll, max_bet):
     df = df.copy()
-    df["Stop_Loss"] = (session_bankroll * 0.6).clip(lower=df["Min_Bet"]).round(2)
+    df["Stop_Loss"] = pd.DataFrame({
+        "A": [session_bankroll * 0.6] * len(df),
+        "B": df["Min_Bet"]
+    }).max(axis=1).round(2)
     df["Score"] = (
         df["Bonus_Frequency"] * 0.4 +
         df["Advantage_Play_Potential"] * 0.2 +
