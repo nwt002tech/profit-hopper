@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 
 # App version
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 
 # Placeholder for loading game data (to be replaced with actual dataset path or logic)
 games_df = pd.DataFrame([
@@ -22,19 +22,15 @@ sessions = 5
 session_bankroll = total_bankroll / sessions
 max_bet = session_bankroll * 0.25
 
-st.markdown(f"**Total Bankroll:** ${total_bankroll:.2f}  
-"
-            f"**Sessions:** {sessions}  
-"
-            f"**Bankroll per Session:** ${session_bankroll:.2f}  
-"
-            f"**Max Bet per Session:** ${max_bet:.2f}")
+st.markdown(f"""**Total Bankroll:** ${total_bankroll:.2f}  
+**Sessions:** {sessions}  
+**Bankroll per Session:** ${session_bankroll:.2f}  
+**Max Bet per Session:** ${max_bet:.2f}""")
 
 st.subheader("🎯 Recommended Games")
 for idx, row in games_df.iterrows():
-    st.markdown(f"""**{row['Name']}**
-🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
-🧠 Score: {row['Score']}
-""")
+    st.markdown(f"""**{row['Name']}**  
+🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}  
+🧠 Score: {row['Score']}""")
 
 # Placeholder for tabs and further content to be added
