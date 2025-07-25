@@ -1,49 +1,47 @@
-
 import streamlit as st
 import pandas as pd
 
-# Load the external game list
+# Load game list from external CSV
 @st.cache_data
-def load_game_data():
-    url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
-    return pd.read_csv(url)
+def load_games():
+    return pd.read_csv("extended_game_list.csv")
 
+# Game recommendation logic
 def recommend_games(df, session_bankroll, max_bet):
     df = df.copy()
-    # Calculate stop-loss dynamically
-    df["Stop_Loss"] = (session_bankroll * 0.6).round(2)
-    df["Stop_Loss"] = df[["Stop_Loss", "Min_Bet"]].max(axis=1)
-
-    # Calculate a score based on weighted criteria
+    df = df[df["Min_Bet"] <= max_bet]
+    df["Stop_Loss"] = df["Min_Bet"].apply(lambda x: max(round(session_bankroll * 0.6, 2), x))
     df["Score"] = (
-        df["RTP"] * 0.3 +
-        df["Bonus_Frequency"] * 0.2 +
+        df["RTP"] * 0.4 +
+        df["Bonus_Frequency"] * 0.3 +
         df["Advantage_Play_Potential"] * 0.2 +
-        (1 - df["Volatility"]) * 0.3
+        df["Volatility"] * -0.1
     )
-    df = df.sort_values("Score", ascending=False)
-    df["Score"] = df["Score"].round(2)
-    return df.head(10)
+    return df.sort_values(by="Score", ascending=False).head(10)
 
-# Session defaults
-if "session_log" not in st.session_state:
-    st.session_state["session_log"] = []
+# UI setup
+st.title("🎯 Profit Hopper - Bankroll Strategy Assistant")
 
-st.title("Profit Hopper App")
-st.markdown("#### Smart bankroll strategy and game recommendations")
-
-# Game Plan summary
-total_bankroll = st.number_input("Enter total bankroll:", min_value=10.0, value=100.0, step=10.0)
-total_sessions = st.number_input("Number of sessions:", min_value=1, value=5, step=1)
+# Sidebar inputs
+st.sidebar.header("💰 Bankroll Settings")
+total_bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=20.0, value=100.0, step=10.0)
+total_sessions = st.sidebar.slider("Number of Sessions", min_value=1, max_value=20, value=5)
 session_bankroll = total_bankroll / total_sessions
-max_bet = session_bankroll * 0.25
+max_bet = round(session_bankroll * 0.25, 2)
 
+# Display summary
+st.markdown("### 💰 Bankroll Status")
+st.markdown(f"**Total Bankroll:** ${total_bankroll:.2f} | **Sessions:** {total_sessions}")
+st.markdown("### 🎯 Game Plan Summary")
 st.markdown(f"**Bankroll/Session:** ${session_bankroll:.2f} | **Max Bet/Session:** ${max_bet:.2f}")
 
-# Load and recommend
-games_df = load_game_data()
+# Load games and recommend
+games_df = load_games()
 recommended = recommend_games(games_df, session_bankroll, max_bet)
 
-st.subheader("Recommended Games")
+# Show recommendations
+st.markdown("## ✅ Recommended Games")
 for idx, row in recommended.iterrows():
-    st.markdown(f"**{row['Name']}**\nMin Bet: ${row['Min_Bet']} | Stop-Loss: ${row['Stop_Loss']}\nScore: {row['Score']}\nTips: {row['Tips']}")
+    st.markdown(f"""**{row['Name']}**
+🎰 Min Bet: ${row['Min_Bet']} | 🛑 Stop-Loss: ${row['Stop_Loss']:.2f}
+📝 {row['Tips']}""")
