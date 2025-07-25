@@ -1,62 +1,57 @@
 import streamlit as st
 import pandas as pd
 
-# Load external game list
-csv_url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
-games_df = pd.read_csv(csv_url)
+# Load game list from GitHub CSV
+@st.cache_data
+def load_game_data():
+    url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
+    df = pd.read_csv(url)
 
-# Map Advantage_Play_Potential values
-potential_map = {"Low": 1, "Medium": 2, "High": 3}
-games_df["Advantage_Play_Potential"] = games_df["Advantage_Play_Potential"].map(potential_map).fillna(1)
+    # Convert 'Advantage_Play_Potential' from text to numeric for scoring
+    ap_map = {"Low": 1, "Medium": 2, "High": 3}
+    if df["Advantage_Play_Potential"].dtype == object:
+        df["Advantage_Play_Potential"] = df["Advantage_Play_Potential"].map(ap_map)
 
-# Sidebar inputs
-st.sidebar.header("Bankroll Settings")
-total_bankroll = st.sidebar.number_input("Total Bankroll ($)", min_value=20.0, value=100.0, step=10.0)
-total_sessions = st.sidebar.slider("Total Sessions", min_value=1, max_value=20, value=5)
+    # Ensure numeric columns are clean
+    for col in ["RTP", "Volatility", "Bonus_Frequency", "Advantage_Play_Potential"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-# Calculated session settings
-session_bankroll = total_bankroll / total_sessions
-max_bet = round(session_bankroll * 0.25, 2)
+    return df
 
-# Game recommendation function
+# Score and recommend games
 def recommend_games(df, session_bankroll, max_bet):
-    df = df.copy()
+    df["Stop_Loss"] = (session_bankroll * 0.6).round(2).clip(lower=df["Min_Bet"])
     df["Score"] = (
-        df["RTP"] * 0.25 +
-        df["Bonus_Frequency"] * 0.25 +
-        (1 - df["Volatility"]) * 0.2 +
+        df["RTP"] * 0.3 +
+        df["Bonus_Frequency"] * 0.3 +
         df["Advantage_Play_Potential"] * 0.2 +
-        df["Expected_Return"] * 0.1
+        (1 - df["Volatility"]) * 0.2
     )
     df = df[df["Min_Bet"] <= max_bet]
-    df["Stop_Loss"] = df["Min_Bet"].apply(lambda x: round(max(x, session_bankroll * 0.6), 2))
     return df.sort_values(by="Score", ascending=False).head(10)
 
-# Run recommendation
+# ---- Interface ----
+st.title("🎰 Profit Hopper - Smart Casino Strategy")
+st.markdown("Optimize your game choices using real data.")
+
+# User inputs
+total_bankroll = st.number_input("Enter total bankroll ($):", min_value=20, value=100, step=10)
+num_sessions = st.number_input("Enter number of sessions:", min_value=1, value=5, step=1)
+session_bankroll = total_bankroll / num_sessions
+max_bet = session_bankroll * 0.25
+
+# Show summary
+st.markdown("### 💰 Bankroll Summary")
+st.markdown(f"**Total Bankroll:** ${total_bankroll:.2f} | **Sessions:** {num_sessions} | **Per Session:** ${session_bankroll:.2f} | **Max Bet:** ${max_bet:.2f}")
+
+# Load and recommend
+games_df = load_game_data()
 recommended = recommend_games(games_df, session_bankroll, max_bet)
 
-# Display bankroll and session summary
-st.markdown("### 💰 Bankroll Status")
-st.markdown(f"**Total Bankroll:** ${total_bankroll:.2f} | **Sessions:** {total_sessions}")
-
-st.markdown("### 🎯 Game Plan Summary")
-st.markdown(f"**Bankroll/Session:** ${session_bankroll:.2f} | **Max Bet/Session:** ${max_bet:.2f}")
-
-# Display recommended games
-st.markdown("## 🧠 Recommended Games to Play")
+st.markdown("### 🎯 Top Recommended Games")
 for _, row in recommended.iterrows():
-    st.markdown(
-        f"**{row['Name']}**
-
-"
-        f"🎰 *{row['Type']}* | 💵 Min Bet: ${row['Min_Bet']} | 🔒 Stop-Loss: ${row['Stop_Loss']}
-
-"
-        f"📈 RTP: {row['RTP']} | 🎁 Bonus Frequency: {row['Bonus_Frequency']} | ⚡ Volatility: {row['Volatility']}
-
-"
-        f"🧮 Expected Return: {row['Expected_Return']} | 🧠 AP Potential: {int(row['Advantage_Play_Potential'])}
-
-"
-        f"📝 {row['Tips']}"
-    )
+    st.markdown(f"""**{row['Name']}**
+🎰 {row['Type']} | 💵 Min Bet: ${row['Min_Bet']} | RTP: {row['RTP']}%
+🎯 Volatility: {row['Volatility']} | Bonus: {row['Bonus_Frequency']}
+🧠 AP: {row['Advantage_Play_Potential']}
+📝 {row['Tips']}""")
