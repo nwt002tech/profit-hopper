@@ -1,97 +1,97 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime
 
-# Try to use JS eval to get timezone
-try:
-    from streamlit_js_eval import streamlit_js_eval
-    _JS = True
-except:
-    _JS = False
+st.set_page_config(page_title="Profit Hopper", layout="wide")
 
-st.set_page_config(page_title="📱 Profit Hopper", layout="centered")
+# App version
+APP_VERSION = "v1.0.3"
 
-# --- Session state ---
-if "tracker" not in st.session_state:
-    st.session_state.tracker = []
-if "tz_offset_minutes" not in st.session_state:
-    st.session_state.tz_offset_minutes = None
+# Load game data
+@st.cache_data
+def load_games():
+    return pd.read_csv("game_data.csv")
 
-# --- Detect browser time offset ---
-offset = None
-if _JS:
-    try:
-        offset = streamlit_js_eval("new Date().getTimezoneOffset()", key="offset")
-        if offset is not None:
-            st.session_state.tz_offset_minutes = int(offset)
-    except:
-        offset = None
+games_df = load_games()
 
-# --- Time function ---
-def get_local_time():
-    utc_now = datetime.utcnow()
-    if st.session_state.tz_offset_minutes is not None:
-        return (utc_now - timedelta(minutes=st.session_state.tz_offset_minutes)).strftime("%I:%M %p %m/%d/%Y")
-    else:
-        return utc_now.strftime("%I:%M %p %m/%d/%Y")
+# Bankroll Inputs
+st.title("Profit Hopper " + APP_VERSION)
+bankroll = st.sidebar.number_input("Total Bankroll", min_value=10, value=100)
+sessions = st.sidebar.number_input("Number of Sessions", min_value=1, value=5)
+session_bankroll = round(bankroll / sessions, 2)
+max_bet = round(session_bankroll * 0.25, 2)
 
-# --- Style ---
-st.markdown("""
-    <style>
-    .block-container { padding-top: 1rem; padding-bottom: 2rem; }
-    input, textarea, .stButton > button {
-        font-size: 18px !important;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Calculating Stop-Loss
+def recommend_games(df, session_bankroll, max_bet):
+    df["Stop_Loss"] = (session_bankroll * 0.6).round(2).clip(lower=df["Min_Bet"])
+    df["Score"] = df["Volatility"].apply(lambda v: 1/v if v > 0 else 0)
+    filtered = df[df["Min_Bet"] <= max_bet]
+    return filtered.sort_values("Score", ascending=False).head(sessions + 2)
 
-# --- App Header ---
-st.markdown("## 🐸 Profit Hopper")
-st.markdown("Track your bankroll, wins/losses, and strategy sessions — on the go!")
+recommended = recommend_games(games_df, session_bankroll, max_bet)
 
-# --- Tabs ---
-tab1, tab2 = st.tabs(["➕ Tracker", "📊 Log"])
+# Top Summary
+st.markdown(f"""
+### Bankroll Status
+- Total Bankroll: ${bankroll}
+- Session Bankroll: ${session_bankroll}
+- Max Bet per Game: ${max_bet}
 
-# --- Form Tab ---
+### Recommended Game Plan
+""")
+
+# Game List Display
+for idx, row in recommended.iterrows():
+    st.markdown(
+        f"**{row['Name']}**  
+"
+        f"Min Bet: ${row['Min_Bet']:.2f} | Stop-Loss: ${row['Stop_Loss']:.2f}  
+"
+        f"Score: {row['Score']:.2f}  
+"
+        f"Tip: {row['Tip']}"
+    )
+
+# Tabs for logging and tracking
+tab1, tab2 = st.tabs(["Tracker", "Summary"])
+
 with tab1:
-    st.markdown("### ➕ Add Session")
-    with st.form("track", clear_on_submit=True):
-        game = st.text_input("🎰 Game / Machine")
-        in_amt = st.number_input("💸 Amount In", 0.0, 10000.0, step=1.0)
-        out_amt = st.number_input("💵 Amount Out", 0.0, 10000.0, step=1.0)
-        bonus = st.radio("🎁 Bonus Hit?", ["Yes", "No"], horizontal=True)
-        rule = st.radio("📏 Followed Rule?", ["Yes", "No"], horizontal=True)
-        notes = st.text_area("📝 Notes")
-        go = st.form_submit_button("✅ Log Session")
-        if go:
-            net = out_amt - in_amt
-            timestamp = get_local_time()
-            st.session_state.tracker.append({
-                "Date/Time": timestamp,
-                "Game": game,
-                "Amount In": in_amt,
-                "Amount Out": out_amt,
-                "Win/Loss": net,
-                "Bonus Hit": bonus,
-                "Rule Followed": rule,
-                "Notes": notes
-            })
-            st.success("✅ Session Logged!")
-            st.rerun()
+    with st.form("session_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            game = st.selectbox("Game Played", games_df["Name"].unique())
+        with col2:
+            amount_in = st.number_input("Amount In", min_value=0.0, value=0.0)
+            amount_out = st.number_input("Amount Out", min_value=0.0, value=0.0)
+        submitted = st.form_submit_button("Add Session")
+        if "session_log" not in st.session_state:
+            st.session_state["session_log"] = []
 
-# --- Log Tab ---
+        if submitted and game:
+            st.session_state["session_log"].append({
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %I:%M %p"),
+                "Game": game,
+                "In": amount_in,
+                "Out": amount_out,
+                "Net": round(amount_out - amount_in, 2)
+            })
+            st.experimental_rerun()
+
+    st.markdown("### Session Log")
+    if st.session_state["session_log"]:
+        df_log = pd.DataFrame(st.session_state["session_log"])
+        st.dataframe(df_log, use_container_width=True)
+
 with tab2:
-    st.markdown("### 🧾 Log History")
-    df = pd.DataFrame(st.session_state.tracker)
-    if not df.empty:
-        df.index += 1
-        st.dataframe(df, use_container_width=True)
-        st.download_button("⬇️ Download CSV", data=df.to_csv(index=False), file_name="profit_hopper_log.csv")
+    st.markdown("### Session Summary")
+    if st.session_state["session_log"]:
+        df_log = pd.DataFrame(st.session_state["session_log"])
+        total_in = df_log["In"].sum()
+        total_out = df_log["Out"].sum()
+        net = total_out - total_in
+        st.metric("Total In", f"${total_in:.2f}")
+        st.metric("Total Out", f"${total_out:.2f}")
+        st.metric("Net Profit/Loss", f"${net:.2f}")
     else:
-        st.info("No sessions logged yet.")
+        st.info("No session data logged yet.")
