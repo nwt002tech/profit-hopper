@@ -1,53 +1,64 @@
-
 import streamlit as st
 import pandas as pd
 
-# Load extended game list from GitHub
-games_url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
-games_df = pd.read_csv(games_url)
+# Load game list from GitHub
+CSV_URL = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
+df = pd.read_csv(CSV_URL)
 
-# Convert critical columns to numeric safely
-numeric_fields = ['Volatility', 'Bonus_Frequency', 'Advantage_Play_Potential', 'Min_Bet']
-for field in numeric_fields:
-    games_df[field] = pd.to_numeric(games_df[field], errors='coerce').fillna(0)
+# Session and bankroll settings
+total_bankroll = 100.00
+total_sessions = 5
+session_bankroll = total_bankroll / total_sessions
+max_bet = session_bankroll * 0.25
 
-# Inputs
-st.title("🎯 Profit Hopper: Bankroll Growth Strategy")
-total_bankroll = st.number_input("Total Bankroll ($)", value=100.0, step=1.0)
-total_sessions = st.number_input("Number of Sessions", value=5, step=1)
-session_bankroll = round(total_bankroll / total_sessions, 2)
-max_bet = round(session_bankroll / 4, 2)
-
-st.markdown(f"### 💰 Bankroll Summary")
-st.markdown(f"**Session Bankroll:** ${session_bankroll:.2f} | **Max Bet:** ${max_bet:.2f}")
-
-# Recommendation function
+# Game scoring and recommendation
 def recommend_games(df, session_bankroll, max_bet):
     df = df.copy()
+    df = df.dropna(subset=["Volatility", "Bonus_Frequency", "Advantage_Play_Potential"])
     df["Score"] = (
-        df["Bonus_Frequency"] * 0.4 +
-        df["Advantage_Play_Potential"] * 0.2 -
-        df["Volatility"] * 0.3
+        df["Volatility"] * -0.4 +
+        df["Bonus_Frequency"] * 0.5 +
+        df["Advantage_Play_Potential"] * 0.2
     )
-    df["Stop_Loss"] = df["Min_Bet"].clip(lower=1.0)
-    filtered = df[
-        (df["Min_Bet"] <= max_bet) & 
-        (df["Stop_Loss"] <= session_bankroll)
-    ].sort_values(by="Score", ascending=False)
-    return filtered
+    df["Stop_Loss"] = pd.Series([max(session_bankroll * 0.6, row["Min_Bet"]) for _, row in df.iterrows()]).round(2)
+    df = df[df["Min_Bet"] <= max_bet]
+    return df.sort_values("Score", ascending=False).head(10)
 
-# Display Recommendations
-recommended = recommend_games(games_df, session_bankroll, max_bet)
+recommended = recommend_games(df, session_bankroll, max_bet)
 
-st.markdown("### 🧠 Recommended Games")
-for _, row in recommended.iterrows():
-    st.markdown(f"""
-**🎮 {row['Name']}**
-🧪 Volatility: {row['Volatility']}
-🎁 Bonus Frequency: {row['Bonus_Frequency']}
-📈 Advantage Potential: {row['Advantage_Play_Potential']}
-💵 Min Bet: ${row['Min_Bet']}
-🛑 Stop-Loss: ${row['Stop_Loss']}
-📌 Tip: {row['Tips']}
----
-""")
+# Layout with Game Plan, Tracker, Summary
+st.title("🎯 Profit Hopper")
+
+st.markdown("### 💰 Bankroll Status")
+st.markdown(f"**Total Bankroll:** ${total_bankroll:.2f} | **Sessions:** {total_sessions}")
+
+st.markdown("### 🧠 Game Plan Summary")
+st.markdown(f"**Bankroll/Session:** ${session_bankroll:.2f} | **Max Bet/Session:** ${max_bet:.2f}")
+
+tab1, tab2, tab3 = st.tabs(["📋 Game Plan", "🧾 Tracker", "📊 Summary"])
+
+with tab1:
+    st.subheader("🎮 Recommended Games")
+    for _, row in recommended.iterrows():
+        st.markdown(
+            f"**{row['Name']}**
+"
+            f"🎰 Category: {row['Category']}
+
+"
+            f"📈 Volatility: {row['Volatility']} | 🎁 Bonus Frequency: {row['Bonus_Frequency']}
+"
+            f"🧠 AP Potential: {row['Advantage_Play_Potential']} | 💸 Stop-Loss: ${row['Stop_Loss']}
+"
+            f"📝 {row['Tips']}
+"
+            "---"
+        )
+
+with tab2:
+    st.subheader("🔄 Session Tracker")
+    st.info("Tracker coming soon!")
+
+with tab3:
+    st.subheader("📈 Summary")
+    st.success("Summary stats will be here.")
