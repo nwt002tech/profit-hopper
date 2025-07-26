@@ -20,7 +20,8 @@ def load_game_data():
 
 # Score and recommend games
 def recommend_games(df, session_bankroll, max_bet):
-    df["Stop_Loss"] = (session_bankroll * 0.6).round(2).clip(lower=df["Min_Bet"])
+    stop_loss_value = round(session_bankroll * 0.6, 2)
+    df["Stop_Loss"] = pd.Series(stop_loss_value, index=df.index).clip(lower=df["Min_Bet"])
     df["Score"] = (
         df["RTP"] * 0.3 +
         df["Bonus_Frequency"] * 0.3 +
