@@ -38,13 +38,13 @@ with tab1:
     for _, row in recommended.iterrows():
         st.markdown(f"""
 **🎰 {row['Name']}**
-- RTP: {row['RTP']}%
-- Volatility: {row['Volatility']}
-- Bonus Frequency: {row['Bonus_Frequency']}
+- 📊 RTP: {row['RTP']}%
+- 📈 Volatility: {row['Volatility']}
+- 🎁 Bonus Frequency: {row['Bonus_Frequency']}
 - Minimum Bet: ${row['Min_Bet']}
 - Advantage Play: {row['Advantage_Play_Potential']}
-- Best Casino Type: {row.get('Best_Casino_Type', 'N/A')}
-- Tips: {row.get('Tips', 'N/A')}
+- Best Casino 🎰 Type: {row.get('Best_Casino_Type', 'N/A')}
+- 💡 Tips: {row.get('Tips', 'N/A')}
 ---
 """)
 
