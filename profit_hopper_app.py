@@ -52,7 +52,7 @@ recommended = recommend_games(games_df, session_bankroll, max_bet)
 st.markdown("### 🎯 Top Recommended Games")
 for _, row in recommended.iterrows():
     st.markdown(f"""**{row['Name']}**
-🎰 {row['Type']} | 💵 Min Bet: ${row['Min_Bet']} | RTP: {row['RTP']}%
+🎰 {row.get('Type', 'Unknown')} | 💵 Min Bet: ${row.get('Min_Bet', 'N/A')} | RTP: {row.get('RTP', 'N/A')}%
 🎯 Volatility: {row['Volatility']} | Bonus: {row['Bonus_Frequency']}
 🧠 AP: {row['Advantage_Play_Potential']}
 📝 {row['Tips']}""")
