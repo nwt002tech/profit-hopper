@@ -32,6 +32,14 @@ num_sessions = st.number_input("Number of Sessions", min_value=1, value=5)
 session_bankroll = round(total_bankroll / num_sessions, 2)
 max_bet = round(session_bankroll / 4, 2)
 
+st.markdown("""
+<style>
+    .game-details p {
+        margin-bottom: 0.25rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown(f"### 💰 Session Bankroll: ${session_bankroll} | 🎯 Max Bet: ${max_bet}")
 
 try:
