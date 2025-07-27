@@ -1,96 +1,73 @@
 
 import streamlit as st
 import pandas as pd
-import requests
-
-
-def format_advantage_play(value):
-    if value >= 0.8:
-        return "🧠 Very High Advantage"
-    elif value >= 0.6:
-        return "👍 High Advantage"
-    elif value >= 0.4:
-        return "⚠️ Moderate Advantage"
-    elif value >= 0.2:
-        return "🔍 Low Advantage"
-    else:
-        return "🚫 Minimal Advantage"
-
-def format_volatility(value):
-    if value <= 2:
-        return "🌱 Low Volatility"
-    elif value <= 4:
-        return "🎯 Medium Volatility"
-    else:
-        return "🔥 High Volatility"
-
-def format_bonus_frequency(value):
-    if value >= 0.4:
-        return "🎁 Very Frequent Bonuses"
-    elif value >= 0.25:
-        return "🎁 Moderate Bonuses"
-    elif value >= 0.1:
-        return "🎁 Rare Bonuses"
-    else:
-        return "🎁 Very Rare Bonuses"
-
-st.set_page_config(page_title="Profit Hopper", layout="wide")
 
 @st.cache_data
 def load_game_data():
-    url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
-    return pd.read_csv(url)
+    url = "https://github.com/nwt002tech/profit-hopper/raw/2b42fd9699f541c3532363d80f84b6f8ef73ba60/extended_game_list.csv"
+    df = pd.read_csv(url)
+    numeric_fields = ["Min_Bet", "Advantage_Play_Potential", "Volatility", "Bonus_Frequency", "Expected_RTP"]
+    for field in numeric_fields:
+        df[field] = pd.to_numeric(df[field], errors="coerce")
+    return df.dropna(subset=["Name", "Min_Bet"])
+
+def describe_field(value, field):
+    if field == "Advantage_Play_Potential":
+        if value >= 0.8: return "Very High"
+        elif value >= 0.6: return "High"
+        elif value >= 0.4: return "Moderate"
+        else: return "Low"
+    if field == "Volatility":
+        if value >= 4: return "Very High"
+        elif value >= 3: return "High"
+        elif value >= 2: return "Medium"
+        else: return "Low"
+    if field == "Bonus_Frequency":
+        if value >= 0.5: return "Very Frequent"
+        elif value >= 0.3: return "Frequent"
+        elif value >= 0.1: return "Occasional"
+        else: return "Rare"
+    return "N/A"
 
 def recommend_games(df, session_bankroll, max_bet):
-    df = df.copy()
-    numeric_fields = ["Min_Bet", "Volatility", "Bonus_Frequency", "RTP", "Advantage_Play_Potential"]
-    for field in numeric_fields:
-        if field in df.columns:
-            df[field] = pd.to_numeric(df[field], errors="coerce")
-    df.dropna(subset=["Min_Bet"], inplace=True)
-    df["Stop_Loss"] = round(session_bankroll * 0.6, 2)
     df["Score"] = (
         df["Advantage_Play_Potential"] * 0.4 +
-        df["Bonus_Frequency"] * 0.3 +
-        df["RTP"] * 0.2 +
-        (1 / (df["Volatility"] + 1)) * 0.1
+        (1 - df["Volatility"] / 5) * 0.3 +
+        df["Bonus_Frequency"] * 0.3
     )
-    df = df[df["Min_Bet"] <= max_bet]
-    return df.sort_values(by="Score", ascending=False).reset_index(drop=True)
+    filtered = df[df["Min_Bet"] <= max_bet].copy()
+    filtered["Stop_Loss"] = (session_bankroll * 0.6).round(2)
+    return filtered.sort_values(by="Score", ascending=False).reset_index(drop=True)
 
-st.title("💰 Profit Hopper")
+def render_game_details(row):
+    return f"""
+    🎰 **{row['Name']}**
+    🏷️ Type: {row['Type']}
+    💸 Min Bet: {row['Min_Bet']}
+    🚫 Stop Loss: {row['Stop_Loss']}
+    🧠 Advantage Play: {describe_field(row['Advantage_Play_Potential'], 'Advantage_Play_Potential')}
+    🎲 Volatility: {describe_field(row['Volatility'], 'Volatility')}
+    🎁 Bonus Frequency: {describe_field(row['Bonus_Frequency'], 'Bonus_Frequency')}
+    🔢 RTP: {row['Expected_RTP']}%
+    💡 Tips: {row['Tips']}
+    """
 
-total_bankroll = st.number_input("Enter Total Bankroll ($)", value=100.0, step=10.0)
-num_sessions = st.slider("Number of Sessions", 1, 20, 5)
+st.title("🎯 Profit Hopper: Game Recommendations")
+
+total_bankroll = st.number_input("Enter your total bankroll ($)", min_value=5.0, value=100.0, step=5.0)
+num_sessions = st.slider("Number of sessions to split your bankroll into", 1, 10, 4)
 session_bankroll = total_bankroll / num_sessions
-max_bet = round(session_bankroll * 0.25, 2)
-
-st.markdown(f"### 📊 Session Settings")
-st.markdown(f"- 💵 **Session Bankroll**: ${session_bankroll:.2f}")
-st.markdown(f"- 🎯 **Max Bet/Game**: ${max_bet:.2f}")
-st.markdown("---")
+max_bet = session_bankroll * 0.25
 
 try:
     games_df = load_game_data()
     recommended = recommend_games(games_df, session_bankroll, max_bet)
-
-    st.subheader("🎯 Top Game Recommendations")
-    for _, row in recommended.iterrows():
-        with st.container():
-            
-st.markdown(f"""
-**{{row['Name']}}**
-
-🎰 Type: {{row["Type"]}}
-💸 Min Bet: ${{row["Min_Bet"]}}
-🚫 StopLoss: ${{row["Stop_Loss"]}}
-
-🧠 {{format_advantage_play(row["Advantage_Play_Potential"])}}
-🎲 {{format_volatility(row["Volatility"])}}
-🎁 {{format_bonus_frequency(row["Bonus_Frequency"])}}
-🔢 RTP: {{row["RTP"]}}%
-💡 Tips: {{row["Tips"]}}
-""")
-
+    st.markdown(f"### Recommended Games (Session Bankroll: ${session_bankroll:.2f}, Max Bet: ${max_bet:.2f})")
+    if not recommended.empty:
+        for _, row in recommended.iterrows():
+            st.markdown(render_game_details(row))
+            st.markdown("---")
+    else:
+        st.warning("No games meet the criteria for your bankroll and session settings.")
 except Exception as e:
     st.error(f"Failed to load recommendations: {e}")
