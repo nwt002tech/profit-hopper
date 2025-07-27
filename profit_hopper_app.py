@@ -57,4 +57,4 @@ try:
 - 	💡 Tips: {row['Tips']}
 """)
 except Exception as e:
-    st.error(f"Failed to load recommendations: {e}")
+    st.error(f"    f"Failed to load recommendations: {e}")
