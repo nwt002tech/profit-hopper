@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from io import StringIO
 
 # Configure page for mobile
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
@@ -47,7 +46,7 @@ def load_game_data():
         df = pd.read_csv(url)
         
         # Clean and convert columns - using correct column names
-        df['RTP'] = pd.to_numeric(df['RTP'], errors='coerce')  # Changed from Expected_RTP
+        df['RTP'] = pd.to_numeric(df['RTP'], errors='coerce')
         df['Min_Bet'] = pd.to_numeric(df['Min_Bet'], errors='coerce')
         df['Advantage_Play_Potential'] = pd.to_numeric(df['Advantage_Play_Potential'], errors='coerce')
         df['Volatility'] = pd.to_numeric(df['Volatility'], errors='coerce')
@@ -136,16 +135,16 @@ def main():
             # Apply filters - using correct column names
             filtered_games = game_df[
                 (game_df['Min_Bet'] <= max_bet) &
-                (game_df['RTP'].notna())  # Changed from Expected_RTP
+                (game_df['RTP'].notna())
             ].copy()
             
             if not filtered_games.empty:
                 # Calculate score - using RTP instead of Expected_RTP
                 filtered_games['Score'] = (
-                    (filtered_games['RTP'] * 0.5) +  # Changed from Expected_RTP
+                    (filtered_games['RTP'] * 0.5) +
                     (filtered_games['Bonus_Frequency'] * 0.2) +
                     (filtered_games['Advantage_Play_Potential'] * 0.2) +
-                    ((6 - filtered_games['Volatility']) * 0.1)  # Inverse weighting
+                    ((6 - filtered_games['Volatility']) * 0.1)
                 )
                 
                 # Sort and display
@@ -154,6 +153,88 @@ def main():
                 st.subheader(f"Recommended Games ({len(filtered_games)} matches)")
                 
                 for _, row in filtered_games.iterrows():
-                    with st.container():
-                        st.markdown(f"""
-                        <div class="game-card
+                    # Fixed: Use properly terminated triple quotes
+                    game_card = f"""
+                    <div class="game-card">
+                        <div><strong>🎰 Name:</strong> {row['Game_Name']}</div>
+                        <div><strong>🗂️ Type:</strong> {row['Type']}</div>
+                        <div><strong>💸 Min Bet:</strong> ${row['Min_Bet']:,.2f}</div>
+                        <div><strong>🚫 Stop Loss:</strong> ${stop_loss:,.2f}</div>
+                        <div class="game-detail"><strong>🧠 Advantage Play:</strong> {map_advantage(int(row['Advantage_Play_Potential']))}</div>
+                        <div class="game-detail"><strong>🎲 Volatility:</strong> {map_volatility(int(row['Volatility']))}</div>
+                        <div class="game-detail"><strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['Bonus_Frequency'])}</div>
+                        <div class="game-detail"><strong>🔢 RTP:</strong> {row['RTP']:.2f}%</div>
+                        <div class="game-detail"><strong>💡 Tips:</strong> {row['Tips']}</div>
+                    </div>
+                    """
+                    st.markdown(game_card, unsafe_allow_html=True)
+            else:
+                st.warning("No games match your current bankroll and settings")
+        else:
+            st.error("Failed to load game data. Please check your connection.")
+    
+    # Tracker Tab
+    with tab2:
+        st.subheader("Session Tracker")
+        
+        with st.form("session_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                money_in = st.number_input("💵 Money In", min_value=0.0, value=float(session_bankroll))
+            with col2:
+                money_out = st.number_input("💰 Money Out", min_value=0.0, value=0.0)
+            
+            submitted = st.form_submit_button("➕ Add Session")
+            
+            if submitted:
+                profit = money_out - money_in
+                st.session_state.session_log.append({
+                    "money_in": money_in,
+                    "money_out": money_out,
+                    "profit": profit
+                })
+                st.success(f"Session added: ${profit:+,.2f} profit")
+    
+        if st.session_state.session_log:
+            st.subheader("Session History")
+            for i, session in enumerate(st.session_state.session_log, 1):
+                profit = session['profit']
+                color = "green" if profit >= 0 else "red"
+                st.markdown(f"""
+                **Session {i}:**  
+                💵 In: ${session['money_in']:,.2f} | 
+                💰 Out: ${session['money_out']:,.2f} | 
+                <span style="color:{color}">📈 Profit: ${profit:+,.2f}</span>
+                """, unsafe_allow_html=True)
+    
+    # Summary Tab
+    with tab3:
+        st.subheader("Bankroll Summary")
+        
+        if not st.session_state.session_log:
+            st.info("No sessions recorded yet")
+        else:
+            # Calculate cumulative values
+            cumulative_profit = sum(session['profit'] for session in st.session_state.session_log)
+            current_bankroll = total_bankroll + cumulative_profit
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("💰 Current Bankroll", f"${current_bankroll:,.2f}",
+                         delta=f"${cumulative_profit:+,.2f}")
+            with col2:
+                st.metric("📈 Total Profit/Loss", f"${cumulative_profit:+,.2f}")
+            
+            # Profit/loss chart
+            profit_history = [0]
+            for session in st.session_state.session_log:
+                profit_history.append(profit_history[-1] + session['profit'])
+            
+            st.subheader("Profit/Loss Trend")
+            st.line_chart(pd.DataFrame({
+                "Session": range(len(profit_history)),
+                "Profit": profit_history
+            }).set_index("Session"))
+
+if __name__ == "__main__":
+    main()
