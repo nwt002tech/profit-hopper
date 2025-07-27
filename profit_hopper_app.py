@@ -48,13 +48,13 @@ try:
         with st.container():
             st.markdown(f"""
 **🎰 {row['Name']}**
-    - 	💸 Min Bet: ${row['Min_Bet']}
-    - 	🚫 Stop Loss: ${row['Stop_Loss']}
-    - 	🧠 Advantage Play: {row['Advantage_Play_Potential']}
-    - 	🎲 Volatility: {row['Volatility']}
-    - 	🎁 Bonus Frequency: {row['Bonus_Frequency']}
-    - 	🔢 RTP: {row['RTP']}%
-    - 	💡 Tips: {row['Tips']}
+- 	💸 Min Bet: ${row['Min_Bet']}
+- 	🚫 Stop Loss: ${row['Stop_Loss']}
+- 	🧠 Advantage Play: {row['Advantage_Play_Potential']}
+- 	🎲 Volatility: {row['Volatility']}
+- 	🎁 Bonus Frequency: {row['Bonus_Frequency']}
+- 	🔢 RTP: {row['RTP']}%
+- 	💡 Tips: {row['Tips']}
 """)
 except Exception as e:
     st.error(f"Failed to load recommendations: {e}")
