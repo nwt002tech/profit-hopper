@@ -9,7 +9,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 def map_advantage(value):
     mapping = {
         5: "Excellent advantage opportunities",
-        4: "Strong potential for skilled players",
+        4极 "Strong potential for skilled players",
         3: "Moderate advantage play value",
         2: "Low advantage value",
         1: "Minimal advantage potential"
@@ -72,8 +72,8 @@ def load_game_data():
                     df[standard] = df[variant]
                     break
         
-        # Check required columns
-        if 'rtp' not in df.columns or 'min_bet'极 in df.columns:
+        # Check required columns - CORRECTED SYNTAX
+        if 'rtp' not in df.columns or 'min_bet' not in df.columns:
             missing = [col for col in ['rtp', 'min_bet'] if col not in df.columns]
             st.error(f"Missing required columns: {', '.join(missing)}")
             return pd.DataFrame()
