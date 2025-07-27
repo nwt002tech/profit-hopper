@@ -1,9 +1,6 @@
 
 import streamlit as st
 import pandas as pd
-import requests
-
-st.set_page_config(page_title="Profit Hopper", layout="wide")
 
 @st.cache_data
 def load_game_data():
@@ -11,50 +8,52 @@ def load_game_data():
     return pd.read_csv(url)
 
 def recommend_games(df, session_bankroll, max_bet):
-    df = df.copy()
-    numeric_fields = ["Min_Bet", "Volatility", "Bonus_Frequency", "RTP", "Advantage_Play_Potential"]
-    for field in numeric_fields:
+    fields_to_numeric = ["Min_Bet", "Volatility", "Advantage_Play_Potential", "Bonus_Frequency", "RTP"]
+    for field in fields_to_numeric:
         if field in df.columns:
             df[field] = pd.to_numeric(df[field], errors="coerce")
-    df.dropna(subset=["Min_Bet"], inplace=True)
-    df["Stop_Loss"] = round(session_bankroll * 0.6, 2)
+
     df["Score"] = (
-        df["Advantage_Play_Potential"] * 0.4 +
-        df["Bonus_Frequency"] * 0.3 +
-        df["RTP"] * 0.2 +
-        (1 / (df["Volatility"] + 1)) * 0.1
+        df["Advantage_Play_Potential"].fillna(0) * 0.4 +
+        (1 - df["Volatility"].fillna(0) / 5) * 0.2 +
+        df["Bonus_Frequency"].fillna(0) * 0.2 +
+        df["RTP"].fillna(0) / 100 * 0.2
     )
-    df = df[df["Min_Bet"] <= max_bet]
-    return df.sort_values(by="Score", ascending=False).reset_index(drop=True)
 
-st.title("💰 Profit Hopper")
+    df["Stop_Loss"] = (session_bankroll * 0.6).round(2)
+    df = df.sort_values(by="Score", ascending=False)
+    return df
 
-total_bankroll = st.number_input("Enter Total Bankroll ($)", value=100.0, step=10.0)
-num_sessions = st.slider("Number of Sessions", 1, 20, 5)
-session_bankroll = total_bankroll / num_sessions
-max_bet = round(session_bankroll * 0.25, 2)
+st.set_page_config(page_title="Profit Hopper", layout="centered")
+st.title("🎰 Profit Hopper – Game Plan")
 
-st.markdown(f"### 📊 Session Settings")
-st.markdown(f"- 💵 **Session Bankroll**: ${session_bankroll:.2f}")
-st.markdown(f"- 🎯 **Max Bet/Game**: ${max_bet:.2f}")
-st.markdown("---")
+total_bankroll = st.number_input("Total Bankroll ($)", min_value=1, value=100)
+num_sessions = st.number_input("Number of Sessions", min_value=1, value=5)
+session_bankroll = round(total_bankroll / num_sessions, 2)
+max_bet = round(session_bankroll / 4, 2)
+
+st.markdown(f"### 💰 Session Bankroll: ${session_bankroll} | 🎯 Max Bet: ${max_bet}")
 
 try:
     games_df = load_game_data()
     recommended = recommend_games(games_df, session_bankroll, max_bet)
 
-    st.subheader("🎯 Top Game Recommendations")
     for _, row in recommended.iterrows():
-        with st.container():
-            st.markdown(f"""
-    **🎰 {row['Name']}**
-    - 💸 Min Bet: ${row['Min_Bet']}
-    - 🚫 Stop Loss: ${row['Stop_Loss']}
-    - 🧠 Advantage Play: {row['Advantage_Play_Potential']}
-    - 🎲 Volatility: {row['Volatility']}
-    - 🎁 Bonus Frequency: {row['Bonus_Frequency']}
-    - 🔢 RTP: {row['RTP']}%
-    - 💡 Tips: {row['Tips']}
-""")
+        st.markdown(f"**{row['Name']}**")
+        st.markdown(
+            f"""
+<div style='margin-left: 20px'>
+<p>🎰 Type: {row['Best_Casino_Type']}</p>
+<p>💸 Min Bet: {row['Min_Bet']}</p>
+<p>🚫 Stop Loss: {row['Stop_Loss']}</p>
+<p>🧠 Advantage Play: {row['Advantage_Play_Potential']}</p>
+<p>🎲 Volatility: {row['Volatility']}</p>
+<p>🎁 Bonus Frequency: {row['Bonus_Frequency']}</p>
+<p>🔢 RTP: {row['RTP']}</p>
+<p>💡 Tips: {row['Tips']}</p>
+</div>
+            """, unsafe_allow_html=True
+        )
+
 except Exception as e:
     st.error(f"Failed to load recommendations: {e}")
