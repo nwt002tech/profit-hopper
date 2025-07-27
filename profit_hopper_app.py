@@ -73,7 +73,7 @@ def load_game_data():
                     break
         
         # Check required columns
-        if 'rtp' not in df.columns or 'min_bet' not in df.columns:
+        if 'rtp' not in df.columns or 'min_bet'极 in df.columns:
             missing = [col for col in ['rtp', 'min_bet'] if col not in df.columns]
             st.error(f"Missing required columns: {', '.join(missing)}")
             return pd.DataFrame()
@@ -117,8 +117,8 @@ def main():
     # CSS for sticky header and mobile optimization
     st.markdown("""
     <style>
-    /* Sticky header styles */
-    .sticky-header {
+    /* Unique class names to avoid conflicts */
+    .ph-sticky-header {
         position: sticky;
         top: 0;
         background: white;
@@ -127,8 +127,7 @@ def main():
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
-    /* Game card styles */
-    .game-card {
+    .ph-game-card {
         padding: 15px;
         margin: 15px 0;
         border-radius: 10px;
@@ -137,24 +136,21 @@ def main():
         border-left: 4px solid #4e89ae;
     }
     
-    /* Game title styles */
-    .game-title {
+    .ph-game-title {
         font-weight: bold;
         font-size: 1.1rem;
         margin-bottom: 8px;
         color: #2c3e50;
     }
     
-    /* Game detail styles */
-    .game-detail {
+    .ph-game-detail {
         margin: 6px 0;
         padding-left: 25px;
         position: relative;
         font-size: 0.95rem;
     }
     
-    /* Emoji bullet styles */
-    .game-detail::before {
+    .ph-game-detail::before {
         content: "•";
         position: absolute;
         left: 10px;
@@ -162,24 +158,22 @@ def main():
         font-size: 1.2rem;
     }
     
-    /* Mobile responsive styles */
+    .ph-stop-loss {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
     @media (max-width: 768px) {
-        .game-card {
+        .ph-game-card {
             padding: 12px;
             margin: 12px 0;
         }
-        .game-detail {
+        .ph-game-detail {
             padding-left: 20px;
         }
-        .game-detail::before {
+        .ph-game-detail::before {
             left: 5px;
         }
-    }
-    
-    /* Stop loss highlight */
-    .stop-loss {
-        color: #e74c3c;
-        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -206,7 +200,7 @@ def main():
     
     # Sticky header
     st.markdown(f"""
-    <div class="sticky-header">
+    <div class="ph-sticky-header">
         <div style="display:flex; justify-content:space-around; text-align:center">
             <div><strong>💰 Total Bankroll</strong><br>${total_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
@@ -245,40 +239,41 @@ def main():
                 st.subheader(f"Recommended Games ({len(filtered_games)} matches)")
                 
                 for _, row in filtered_games.iterrows():
+                    # Use unique class names prefixed with "ph-"
                     game_card = f"""
-                    <div class="game-card">
-                        <div class="game-title">🎰 {row['game_name']}</div>
+                    <div class="ph-game-card">
+                        <div class="ph-game-title">🎰 {row['game_name']}</div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🗂️ Type:</strong> {row['type']}
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>💸 Min Bet:</strong> ${row['min_bet']:,.2f}
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🚫 Stop Loss:</strong> 
-                            <span class="stop-loss">${stop_loss:,.2f}</span>
+                            <span class="ph-stop-loss">${stop_loss:,.2f}</span>
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🧠 Advantage Play:</strong> {map_advantage(int(row['advantage_play_potential']))}
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>🔢 RTP:</strong> {row['rtp']:.2f}%
                         </div>
                         
-                        <div class="game-detail">
+                        <div class="ph-game-detail">
                             <strong>💡 Tips:</strong> {row['tips']}
                         </div>
                     </div>
