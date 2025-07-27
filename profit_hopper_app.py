@@ -53,9 +53,6 @@ def load_game_data():
         # Normalize column names
         df.columns = [normalize_column_name(col) for col in df.columns]
         
-        # Debug: show actual columns
-        st.write("Columns found in CSV:", df.columns.tolist())
-        
         # Create standard column names
         col_map = {
             'rtp': ['rtp', 'expected_rtp'],
@@ -120,6 +117,7 @@ def main():
     # CSS for sticky header and mobile optimization
     st.markdown("""
     <style>
+    /* Sticky header styles */
     .sticky-header {
         position: sticky;
         top: 0;
@@ -128,18 +126,60 @@ def main():
         padding: 10px 0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+    
+    /* Game card styles */
     .game-card {
         padding: 15px;
-        margin: 10px 0;
+        margin: 15px 0;
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background-color: #f8f9fa;
+        border-left: 4px solid #4e89ae;
     }
+    
+    /* Game title styles */
+    .game-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+        color: #2c3e50;
+    }
+    
+    /* Game detail styles */
     .game-detail {
-        margin: 4px 0;
-        padding-left: 15px;
+        margin: 6px 0;
+        padding-left: 25px;
+        position: relative;
+        font-size: 0.95rem;
     }
+    
+    /* Emoji bullet styles */
+    .game-detail::before {
+        content: "•";
+        position: absolute;
+        left: 10px;
+        color: #4e89ae;
+        font-size: 1.2rem;
+    }
+    
+    /* Mobile responsive styles */
     @media (max-width: 768px) {
-        .game-detail { padding-left: 10px; }
+        .game-card {
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .game-detail {
+            padding-left: 20px;
+        }
+        .game-detail::before {
+            left: 5px;
+        }
+    }
+    
+    /* Stop loss highlight */
+    .stop-loss {
+        color: #e74c3c;
+        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -207,15 +247,40 @@ def main():
                 for _, row in filtered_games.iterrows():
                     game_card = f"""
                     <div class="game-card">
-                        <div><strong>🎰 Name:</strong> {row['game_name']}</div>
-                        <div><strong>🗂️ Type:</strong> {row['type']}</div>
-                        <div><strong>💸 Min Bet:</strong> ${row['min_bet']:,.2f}</div>
-                        <div><strong>🚫 Stop Loss:</strong> ${stop_loss:,.2f}</div>
-                        <div class="game-detail"><strong>🧠 Advantage Play:</strong> {map_advantage(int(row['advantage_play_potential']))}</div>
-                        <div class="game-detail"><strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}</div>
-                        <div class="game-detail"><strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}</div>
-                        <div class="game-detail"><strong>🔢 RTP:</strong> {row['rtp']:.2f}%</div>
-                        <div class="game-detail"><strong>💡 Tips:</strong> {row['tips']}</div>
+                        <div class="game-title">🎰 {row['game_name']}</div>
+                        
+                        <div class="game-detail">
+                            <strong>🗂️ Type:</strong> {row['type']}
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>💸 Min Bet:</strong> ${row['min_bet']:,.2f}
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>🚫 Stop Loss:</strong> 
+                            <span class="stop-loss">${stop_loss:,.2f}</span>
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>🧠 Advantage Play:</strong> {map_advantage(int(row['advantage_play_potential']))}
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>🔢 RTP:</strong> {row['rtp']:.2f}%
+                        </div>
+                        
+                        <div class="game-detail">
+                            <strong>💡 Tips:</strong> {row['tips']}
+                        </div>
                     </div>
                     """
                     st.markdown(game_card, unsafe_allow_html=True)
@@ -252,10 +317,12 @@ def main():
                 profit = session['profit']
                 color = "green" if profit >= 0 else "red"
                 st.markdown(f"""
-                **Session {i}:**  
-                💵 In: ${session['money_in']:,.2f} | 
-                💰 Out: ${session['money_out']:,.2f} | 
-                <span style="color:{color}">📈 Profit: ${profit:+,.2f}</span>
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <strong>Session {i}:</strong><br>
+                    💵 In: ${session['money_in']:,.2f} | 
+                    💰 Out: ${session['money_out']:,.2f} | 
+                    <span style="color:{color}; font-weight:bold;">📈 Profit: ${profit:+,.2f}</span>
+                </div>
                 """, unsafe_allow_html=True)
     
     # Summary Tab
