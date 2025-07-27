@@ -20,7 +20,7 @@ def recommend_games(df, session_bankroll, max_bet):
         df["RTP"].fillna(0) / 100 * 0.2
     )
 
-    df["Stop_Loss"] = (session_bankroll * 0.6).round(2)
+    df["Stop_Loss"] = round(session_bankroll * 0.6, 2)
     df = df.sort_values(by="Score", ascending=False)
     return df
 
