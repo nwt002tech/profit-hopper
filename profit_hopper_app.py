@@ -47,13 +47,13 @@ try:
     for _, row in recommended.iterrows():
         with st.container():
             st.markdown(f"""
+        formatted_advantage = "🔥 High" if row["Advantage_Play_Potential"] >= 0.7 else "⚠️ Medium" if row["Advantage_Play_Potential"] >= 0.3 else "❌ No Advantage"
+        formatted_volatility = "🟢 Low" if row["Volatility"] <= 2 else "🟡 Medium" if row["Volatility"] <= 4 else "🔴 High Volatility"
+        formatted_bonus = "🎁 Frequent Bonuses" if row["Bonus_Frequency"] >= 0.25 else "🎁 Occasional Bonuses" if row["Bonus_Frequency"] >= 0.15 else "🎁 Rare Bonuses"
 **🎰 {row['Name']}**
 - 	💸 Min Bet: ${row['Min_Bet']}
 - 	🚫 Stop Loss: ${row['Stop_Loss']}
-- 	🧠 Advantage Play: {row['Advantage_Play_Potential']}
-- 	🎲 Volatility: {row['Volatility']}
-- 	🎁 Bonus Frequency: {row['Bonus_Frequency']}
-- 	🔢 RTP: {row['RTP']}%
+        - 🧠 Advantage Play: {formatted_advantage}\n        - 🎲 Volatility: {formatted_volatility}\n        - 🎁 Bonus Frequency: {formatted_bonus}\n- 	🔢 RTP: {row['RTP']}%
 - 	💡 Tips: {row['Tips']}
 """)
 except Exception as e:
