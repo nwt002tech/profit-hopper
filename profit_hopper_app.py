@@ -47,22 +47,16 @@ try:
     for _, row in recommended.iterrows():
         with st.container():
             st.markdown(f"""
-            st.markdown(f"""
-    🎰 Type: {row["Type"]}
-    💸 Min Bet: ${row["Min_Bet"]:.2f}
-    🚫 Stop Loss: ${row["Stop_Loss"]:.2f}
-    🧠 Advantage Play: {describe_advantage_play(row["Advantage_Play_Potential"])}
-    🎲 Volatility: {describe_volatility(row["Volatility"])}
-    🎁 Bonus Frequency: {describe_bonus_frequency(row["Bonus_Frequency"])}
-    🔢 RTP: {row["RTP"]:.2f}
-    💡 Tips: {row["Tips"]}
-            """)
 **🎰 {row['Name']}**
 - 	💸 Min Bet: ${row['Min_Bet']}
 - 	🚫 Stop Loss: ${row['Stop_Loss']}
-- 	🧠 Advantage Play: {row['Advantage_Play_Potential']}
-- 	🎲 Volatility: {row['Volatility']}
-- 	🎁 Bonus Frequency: {row['Bonus_Frequency']}
+    formatted_advantage = 'None' if row['Advantage_Play_Potential'] == 0 else 'Possible' if row['Advantage_Play_Potential'] == 0.5 else 'Strong'
+    formatted_volatility = 'Low' if row['Volatility'] == 1 else 'Medium' if row['Volatility'] == 2 else 'High'
+    bf = row['Bonus_Frequency']
+    formatted_bonus = 'Very Frequent' if bf > 0.4 else 'Frequent' if bf > 0.25 else 'Occasional' if bf > 0.1 else 'Rare'
+- 	🧠 Advantage Play: {formatted_advantage}
+- 	🎲 Volatility: {formatted_volatility}
+- 	🎁 Bonus Frequency: {formatted_bonus}
 - 	🔢 RTP: {row['RTP']}%
 - 	💡 Tips: {row['Tips']}
 """)
