@@ -3,6 +3,37 @@ import streamlit as st
 import pandas as pd
 import requests
 
+
+def format_advantage_play(value):
+    if value >= 0.8:
+        return "🧠 Very High Advantage"
+    elif value >= 0.6:
+        return "👍 High Advantage"
+    elif value >= 0.4:
+        return "⚠️ Moderate Advantage"
+    elif value >= 0.2:
+        return "🔍 Low Advantage"
+    else:
+        return "🚫 Minimal Advantage"
+
+def format_volatility(value):
+    if value <= 2:
+        return "🌱 Low Volatility"
+    elif value <= 4:
+        return "🎯 Medium Volatility"
+    else:
+        return "🔥 High Volatility"
+
+def format_bonus_frequency(value):
+    if value >= 0.4:
+        return "🎁 Very Frequent Bonuses"
+    elif value >= 0.25:
+        return "🎁 Moderate Bonuses"
+    elif value >= 0.1:
+        return "🎁 Rare Bonuses"
+    else:
+        return "🎁 Very Rare Bonuses"
+
 st.set_page_config(page_title="Profit Hopper", layout="wide")
 
 @st.cache_data
@@ -46,19 +77,20 @@ try:
     st.subheader("🎯 Top Game Recommendations")
     for _, row in recommended.iterrows():
         with st.container():
-            st.markdown(f"""
-**🎰 {row['Name']}**
-- 	💸 Min Bet: ${row['Min_Bet']}
-- 	🚫 Stop Loss: ${row['Stop_Loss']}
-    formatted_advantage = 'None' if row['Advantage_Play_Potential'] == 0 else 'Possible' if row['Advantage_Play_Potential'] == 0.5 else 'Strong'
-    formatted_volatility = 'Low' if row['Volatility'] == 1 else 'Medium' if row['Volatility'] == 2 else 'High'
-    bf = row['Bonus_Frequency']
-    formatted_bonus = 'Very Frequent' if bf > 0.4 else 'Frequent' if bf > 0.25 else 'Occasional' if bf > 0.1 else 'Rare'
-- 	🧠 Advantage Play: {formatted_advantage}
-- 	🎲 Volatility: {formatted_volatility}
-- 	🎁 Bonus Frequency: {formatted_bonus}
-- 	🔢 RTP: {row['RTP']}%
-- 	💡 Tips: {row['Tips']}
+            
+st.markdown(f"""
+**{{row['Name']}}**
+
+🎰 Type: {{row["Type"]}}
+💸 Min Bet: ${{row["Min_Bet"]}}
+🚫 StopLoss: ${{row["Stop_Loss"]}}
+
+🧠 {{format_advantage_play(row["Advantage_Play_Potential"])}}
+🎲 {{format_volatility(row["Volatility"])}}
+🎁 {{format_bonus_frequency(row["Bonus_Frequency"])}}
+🔢 RTP: {{row["RTP"]}}%
+💡 Tips: {{row["Tips"]}}
 """)
+
 except Exception as e:
     st.error(f"Failed to load recommendations: {e}")
