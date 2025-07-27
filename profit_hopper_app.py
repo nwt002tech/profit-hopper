@@ -47,16 +47,6 @@ try:
     for _, row in recommended.iterrows():
         with st.container():
             st.markdown(f"""
-            st.markdown(f"""
-    🎰 Type: {row["Type"]}
-    💸 Min Bet: ${row["Min_Bet"]:.2f}
-    🚫 Stop Loss: ${row["Stop_Loss"]:.2f}
-    🧠 Advantage Play: {describe_advantage_play(row["Advantage_Play_Potential"])}
-    🎲 Volatility: {describe_volatility(row["Volatility"])}
-    🎁 Bonus Frequency: {describe_bonus_frequency(row["Bonus_Frequency"])}
-    🔢 RTP: {row["RTP"]:.2f}
-    💡 Tips: {row["Tips"]}
-            """)
 **🎰 {row['Name']}**
 - 	💸 Min Bet: ${row['Min_Bet']}
 - 	🚫 Stop Loss: ${row['Stop_Loss']}
