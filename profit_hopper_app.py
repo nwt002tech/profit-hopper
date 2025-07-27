@@ -47,12 +47,12 @@ def load_game_data():
         
         # Clean and convert columns - using correct column names
         df['RTP'] = pd.to_numeric(df['RTP'], errors='coerce')
-        df['Min_Bet'] = pd.to_numeric(df['Min_Bet'], errors='coerce')
-        df['Advantage_Play_Potential'] = pd.to_numeric(df['Advantage_Play_Potential'], errors='coerce')
+        df['Min Bet'] = pd.to_numeric(df['Min Bet'], errors='coerce')
+        df['Advantage Play Potential'] = pd.to_numeric(df['Advantage Play Potential'], errors='coerce')
         df['Volatility'] = pd.to_numeric(df['Volatility'], errors='coerce')
-        df['Bonus_Frequency'] = pd.to_numeric(df['Bonus_Frequency'], errors='coerce')
+        df['Bonus Frequency'] = pd.to_numeric(df['Bonus Frequency'], errors='coerce')
         
-        return df.dropna(subset=['RTP', 'Min_Bet'])
+        return df.dropna(subset=['RTP', 'Min Bet'])
     except Exception as e:
         st.error(f"Error loading game data: {str(e)}")
         return pd.DataFrame()
@@ -134,16 +134,16 @@ def main():
         if not game_df.empty:
             # Apply filters - using correct column names
             filtered_games = game_df[
-                (game_df['Min_Bet'] <= max_bet) &
+                (game_df['Min Bet'] <= max_bet) &
                 (game_df['RTP'].notna())
             ].copy()
             
             if not filtered_games.empty:
-                # Calculate score - using RTP instead of Expected_RTP
+                # Calculate score
                 filtered_games['Score'] = (
                     (filtered_games['RTP'] * 0.5) +
-                    (filtered_games['Bonus_Frequency'] * 0.2) +
-                    (filtered_games['Advantage_Play_Potential'] * 0.2) +
+                    (filtered_games['Bonus Frequency'] * 0.2) +
+                    (filtered_games['Advantage Play Potential'] * 0.2) +
                     ((6 - filtered_games['Volatility']) * 0.1)
                 )
                 
@@ -153,16 +153,16 @@ def main():
                 st.subheader(f"Recommended Games ({len(filtered_games)} matches)")
                 
                 for _, row in filtered_games.iterrows():
-                    # Fixed: Use properly terminated triple quotes
+                    # Use correct column names from CSV
                     game_card = f"""
                     <div class="game-card">
-                        <div><strong>🎰 Name:</strong> {row['Game_Name']}</div>
+                        <div><strong>🎰 Name:</strong> {row['Game Name']}</div>
                         <div><strong>🗂️ Type:</strong> {row['Type']}</div>
-                        <div><strong>💸 Min Bet:</strong> ${row['Min_Bet']:,.2f}</div>
+                        <div><strong>💸 Min Bet:</strong> ${row['Min Bet']:,.2f}</div>
                         <div><strong>🚫 Stop Loss:</strong> ${stop_loss:,.2f}</div>
-                        <div class="game-detail"><strong>🧠 Advantage Play:</strong> {map_advantage(int(row['Advantage_Play_Potential']))}</div>
+                        <div class="game-detail"><strong>🧠 Advantage Play:</strong> {map_advantage(int(row['Advantage Play Potential']))}</div>
                         <div class="game-detail"><strong>🎲 Volatility:</strong> {map_volatility(int(row['Volatility']))}</div>
-                        <div class="game-detail"><strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['Bonus_Frequency'])}</div>
+                        <div class="game-detail"><strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['Bonus Frequency'])}</div>
                         <div class="game-detail"><strong>🔢 RTP:</strong> {row['RTP']:.2f}%</div>
                         <div class="game-detail"><strong>💡 Tips:</strong> {row['Tips']}</div>
                     </div>
