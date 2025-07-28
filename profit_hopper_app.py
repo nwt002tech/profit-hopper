@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime
+import altair as alt  # Replaced matplotlib with Streamlit-native Altair
 
 # Configure page for mobile
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed", page_title="Profit Hopper Casino Manager")
@@ -477,23 +477,22 @@ def main():
             with col3:
                 st.metric("📊 ROI", f"{roi:.1f}%")
             
-            # Profit/loss chart
-            profit_history = [0]
-            dates = [st.session_state.session_log[0]['date']]
+            # Bankroll growth chart
+            bankroll_history = [st.session_state.bankroll - cumulative_profit]
+            dates = [min(session['date'] for session in st.session_state.session_log) if st.session_state.session_log else datetime.today()]
             cumulative = 0
             
             for session in sorted(st.session_state.session_log, key=lambda x: x['date']):
                 cumulative += session['profit']
-                profit_history.append(cumulative)
+                bankroll_history.append(st.session_state.bankroll - cumulative_profit + cumulative)
                 dates.append(session['date'])
             
             st.subheader("Bankroll Growth")
             chart_data = pd.DataFrame({
                 "Date": dates,
-                "Bankroll": [st.session_state.bankroll - cumulative_profit] + [st.session_state.bankroll - cumulative_profit + p for p in profit_history[1:]]
-            }).set_index("Date")
-            
-            st.line_chart(chart_data)
+                "Bankroll": bankroll_history
+            })
+            st.line_chart(chart_data.set_index("Date"))
             
             # Game performance analysis
             st.subheader("Game Performance")
@@ -527,23 +526,30 @@ def main():
                 'ROI (%)': '{:.1f}%'
             }))
             
-            # Win/Loss distribution
+            # Win/Loss distribution using Altair
             st.subheader("Win/Loss Distribution")
             profits = [s['profit'] for s in st.session_state.session_log]
-            wins = [p for p in profits if p >= 0]
-            losses = [p for p in profits if p < 0]
             
-            if wins or losses:
-                fig, ax = plt.subplots()
-                ax.hist([wins, losses], bins=15, label=['Wins', 'Losses'], color=['green', 'red'], stacked=True)
-                ax.axvline(x=0, color='gray', linestyle='--')
-                ax.set_title("Profit/Loss Distribution")
-                ax.set_xlabel("Profit/Loss Amount")
-                ax.set_ylabel("Frequency")
-                ax.legend()
-                st.pyplot(fig)
+            if profits:
+                df = pd.DataFrame({
+                    'Profit': profits,
+                    'Type': ['Win' if p >= 0 else 'Loss' for p in profits]
+                })
+                
+                chart = alt.Chart(df).mark_bar().encode(
+                    alt.X("Profit:Q", bin=alt.Bin(maxbins=20), title='Profit/Loss Amount'),
+                    alt.Y('count()', title='Frequency'),
+                    color=alt.Color('Type', scale=alt.Scale(
+                        domain=['Win', 'Loss'],
+                        range=['#27ae60', '#e74c3c']
+                    ))
+                ).properties(
+                    title='Profit/Loss Distribution'
+                )
+                
+                st.altair_chart(chart, use_container_width=True)
             else:
-                st.info("No win/loss data available")
+                st.info("No profit data available")
 
 # Run the app
 if __name__ == "__main__":
