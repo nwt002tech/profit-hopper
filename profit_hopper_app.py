@@ -4,7 +4,6 @@ import re
 import numpy as np
 from datetime import datetime
 import altair as alt
-import json
 import base64
 
 # Configure page for mobile
@@ -52,7 +51,6 @@ def normalize_column_name(name):
 @st.cache_data(ttl=3600)  # Refresh every hour
 def load_game_data():
     try:
-        # Use raw GitHub URL directly
         url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
         df = pd.read_csv(url)
         
@@ -359,41 +357,36 @@ def main():
                 # Display games in a responsive grid
                 st.markdown('<div class="ph-game-grid">', unsafe_allow_html=True)
                 
-                for _, row in filtered_games.head(50).iterrows():  # Limit to top 50
-                    # Use unique class names prefixed with "ph-"
+                for _, row in filtered_games.head(50).iterrows():
+                    # Create the game card HTML
                     game_card = f"""
                     <div class="ph-game-card">
                         <div class="ph-game-title">🎰 {row['game_name']}</div>
-                        
                         <div class="ph-game-detail">
                             <strong>🗂️ Type:</strong> {row['type']}
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>💸 Min Bet:</strong> ${row['min_bet']:,.2f}
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>🧠 Advantage Play:</strong> {map_advantage(int(row['advantage_play_potential']))}
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>🔢 RTP:</strong> {row['rtp']:.2f}%
                         </div>
-                        
                         <div class="ph-game-detail">
                             <strong>💡 Tips:</strong> {row['tips']}
                         </div>
                     </div>
                     """
+                    
+                    # Render the game card with HTML interpretation
                     st.markdown(game_card, unsafe_allow_html=True)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
