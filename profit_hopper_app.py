@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import numpy as np
 from datetime import datetime
-import altair as alt
+import alt极air as alt
 import base64
 
 # Configure page for mobile
@@ -23,7 +23,7 @@ def map_advantage(value):
 def map_volatility(value):
     mapping = {
         1: "📈 Very low volatility (frequent small wins)",
-        2极: "📈 Low volatility",
+        2: "📈 Low volatility",  # Fixed this line
         3: "📊 Medium volatility",
         4: "📉 High volatility",
         5: "📉 Very high volatility (rare big wins)"
@@ -60,7 +60,7 @@ def load_game_data():
         # Create standard column names
         col_map = {
             'rtp': ['rtp', 'expected_rtp'],
-            'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_b极t_amount'],
+            'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
             'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
@@ -98,7 +98,7 @@ def load_game_data():
             df['bonus_frequency'] = 0.2  # Default: occasional
             
         # Set defaults for display columns
-        if 'game_name' not in df.columns:  # Fixed this line
+        if 'game_name' not in df.columns:
             df['game_name'] = "Unknown Game"
         if 'type' not in df.columns:
             df['type'] = "Unknown"
@@ -198,7 +198,7 @@ def main():
     
     @media (max-width: 768px) {
         .ph-game-grid {
-            grid-template-columns: 1fr;  # Fixed this line
+            grid-template-columns: 1fr;
         }
         .ph-game-card {
             padding: 12px;
@@ -248,7 +248,7 @@ def main():
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 4极x;
         border: none;
     }
     
@@ -367,7 +367,7 @@ def main():
             <div><strong>💰 Current Bankroll</strong><br>${current_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
             <div><strong>💸 Max Bet</strong><br>${max_bet:,.2f}</div>
-            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2极f}</span></div>
+            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2f}</span></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -472,7 +472,7 @@ def main():
                         </div>
                         <div class="ph-game-detail">
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
-                        </div>
+                        </极div>
                         <div class="ph-game-detail">
                             <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
                         </div>
@@ -597,7 +597,7 @@ def main():
             # Calculate performance metrics
             total_invested = sum(s['money_in'] for s in current_trip_sessions)
             roi = (trip_profit / total_invested) * 100 if total_invested > 0 else 0
-            avg_session_profit = trip_profit / len(current_trip_sessions)  # Fixed variable name
+            avg_session_profit = trip_profit / len(current_trip_sessions)
             
             # Display key metrics
             col1, col2, col3 = st.columns(3)
