@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed", page_title=
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
+        4: "⭐️⭐️⭐极⭐️ Strong potential for skilled players",
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -63,7 +63,7 @@ def load_game_data():
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
-            'bonus_frequency': ['bon极_frequency', 'bonus_freq', 'bonus_rate'],
+            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
             'type': ['type', 'game_type', 'category'],
             'tips': ['tips', 'tip', 'strategy']
@@ -91,7 +91,7 @@ def load_game_data():
         
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
-            df['advantage_play极otential'] = 3  # Default: moderate
+            df['advantage_play_potential'] = 3  # Default: moderate
         if 'volatility' not in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
@@ -233,7 +233,7 @@ def main():
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 4极;
         border: none;
     }
     </style>
@@ -263,14 +263,14 @@ def main():
     max_bet = session_bankroll * 0.25
     stop_loss = session_bankroll * 0.6
     
-    # Sticky header
+    # Sticky header - FIXED TYPO HERE (changed .2极 to .2f)
     st.markdown(f"""
     <div class="ph-sticky-header">
         <div style="display:flex; justify-content:space-around; text-align:center">
             <div><strong>💰 Total Bankroll</strong><br>${total_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
             <div><strong>💸 Max Bet</strong><br>${max_bet:,.2f}</div>
-            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2极}</span></div>
+            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2f}</span></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
