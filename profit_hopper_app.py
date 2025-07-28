@@ -63,7 +63,7 @@ def load_game_data():
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
-            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
+            'bonus_frequency': ['bon极_frequency', 'bonus_freq', 'bonus_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
             'type': ['type', 'game_type', 'category'],
             'tips': ['tips', 'tip', 'strategy']
@@ -91,7 +91,7 @@ def load_game_data():
         
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
-            df['advantage_play_potential'] = 3  # Default: moderate
+            df['advantage_play极otential'] = 3  # Default: moderate
         if 'volatility' not in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
@@ -270,7 +270,7 @@ def main():
             <div><strong>💰 Total Bankroll</strong><br>${total_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
             <div><strong>💸 Max Bet</strong><br>${max_bet:,.2f}</div>
-            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2f}</span></div>
+            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2极}</span></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -579,14 +579,16 @@ def main():
                 })
                 st.markdown(get_csv_download_link(analytics_df, "analytics_summary.csv"), unsafe_allow_html=True)
 
-# Handle session deletion
+# Handle session deletion using the new query_params API
 if st.session_state.get('session_log'):
     # Check if we have a component value from the JavaScript
-    if st.experimental_get_query_params().get('action'):
-        action = st.experimental_get_query_params().get('action')[0]
-        index = int(st.experimental_get_query_params().get('index')[0])
+    query_params = st.query_params
+    if "action" in query_params and "index" in query_params:
+        action = query_params["action"]
+        index = int(query_params["index"])
         delete_session(index)
-        st.experimental_set_query_params()
+        # Clear the query parameters
+        st.query_params.clear()
 
 # Run the app
 if __name__ == "__main__":
