@@ -30,7 +30,7 @@ def map_volatility(value):
     }
     return mapping.get(value, "Unknown")
 
-def map_bonus_freq(value):  # Fixed function name
+def map_bonus_freq(value):
     if value >= 0.4:
         return "🎁🎁🎁 Very frequent bonuses"
     elif value >= 0.3:
@@ -54,14 +54,14 @@ def load_game_data():
         url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
         df = pd.read_csv(url)
         
-        # Normalize column names
-        df.columns = [normalize_column_name(col) for极 col in df.columns]
+        # Normalize column names - FIXED THIS LINE
+        df.columns = [normalize_column_name(col) for col in df.columns]
         
         # Create standard column names
         col_map = {
             'rtp': ['rtp', 'expected_rtp'],
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
-            'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
+            'advantage_play_potential': ['advant极age_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
             'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
@@ -91,7 +91,7 @@ def load_game_data():
         
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
-            df['advantage_play极potential'] = 3  # Default: moderate
+            df['advantage_play_potential'] = 3  # Default: moderate
         if 'volatility' not in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
@@ -126,9 +126,9 @@ def main():
         st.session_state.current_trip_id = 1
     if 'casino_list' not in st.session_state:
         st.session_state.casino_list = sorted([
-            "L’auberge Lake Charles",
+            "L'auberge Lake Charles",
             "Golden Nugget Lake Charles",
-            "Caesar’s Horseshoe Lake Charles",
+            "Caesar's Horseshoe Lake Charles",
             "Delta Downs",
             "Island View",
             "Paragon Marksville",
@@ -190,7 +190,7 @@ def main():
         font-weight: bold;
     }
     
-    .ph-game-grid {
+极    .ph-game-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 20px;
@@ -451,7 +451,7 @@ def main():
                 filtered_games = filtered_games.sort_values('Score', ascending=False)
                 
                 st.subheader(f"Recommended Games ({len(filtered_games)} matches)")
-                st.caption(f"Showing games with RTP ≥ {min_rtp}% and min bet ≤ ${max_min_bet:,.2f}")
+                st.caption(f"Showing games with RTP ≥ {min_极rtp}% and min bet ≤ ${max_min_bet:,.2f}")
                 
                 # Display games in a responsive grid
                 st.markdown('<div class="ph-game-grid">', unsafe_allow_html=True)
@@ -474,7 +474,7 @@ def main():
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
                         </div>
                         <div class="ph-game-detail">
-                            <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}  <!-- Fixed function call -->
+                            <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
                         </div>
                         <div class="ph-game-detail">
                             <strong>🔢 RTP:</strong> {row['rtp']:.2f}%
@@ -568,7 +568,7 @@ def main():
                 session_card = f"""
                 <div class="session-card">
                     <div><strong>📅 {session['date']}</strong> | 🎮 {session['game']}</div>
-                    <div>💵 In: ${session['money_in']:,.2f} | 💰 Out: ${session['money_out']:,.2极f} | 
+                    <div>💵 In: ${session['money_in']:,.2f} | 💰 Out: ${session['money_out']:,.2f} | 
                     <span class="{profit_class}">📈 Profit: ${profit:+,.2f}</span></div>
                     <div><strong>📝 Notes:</strong> {session['notes']}</div>
                 </div>
