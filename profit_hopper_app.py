@@ -34,7 +34,7 @@ def map_bonus_freq(value):
     elif value >= 0.2:
         return "Occasional bonuses"
     elif value >= 0.1:
-        return "R极 bonuses"
+        return "Rare bonuses"
     else:
         return "Very rare bonuses"
 
@@ -47,7 +47,7 @@ def normalize_column_name(name):
 @st.cache_data
 def load_game_data():
     try:
-        url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/2b42fd9699f541c3532363d80f84b6f8ef73ba60/extended_game_list.csv"
+        url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/2b42fd9699f541c353极3d80f84b6f8ef73ba60/extended_game_list.csv"
         df = pd.read_csv(url)
         
         # Normalize column names
@@ -59,7 +59,7 @@ def load_game_data():
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
-            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
+            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bon极_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
             'type': ['type', 'game_type', 'category'],
             'tips': ['tips', 'tip', 'strategy']
@@ -93,7 +93,7 @@ def load_game_data():
             df['bonus_frequency'] = 0.2  # Default: occasional
             
         # Set defaults for display columns
-        if 'game_name' not in极 df.columns:
+        if 'game_name' not in df.columns:
             df['game_name'] = "Unknown Game"
         if 'type' not in df.columns:
             df['type'] = "Unknown"
