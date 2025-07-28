@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import numpy as np
 from datetime import datetime
-import altair as alt  # Fixed import statement
+import altair as alt
 import base64
 
 # Configure page for mobile
@@ -23,14 +23,14 @@ def map_advantage(value):
 def map_volatility(value):
     mapping = {
         1: "📈 Very low volatility (frequent small wins)",
-        2: "📈 Low volatility",  # Fixed this line
+        2: "📈 Low volatility",
         3: "📊 Medium volatility",
         4: "📉 High volatility",
         5: "📉 Very high volatility (rare big wins)"
     }
     return mapping.get(value, "Unknown")
 
-def map_bonus_f极eq(value):
+def map_bonus_freq(value):  # Fixed function name
     if value >= 0.4:
         return "🎁🎁🎁 Very frequent bonuses"
     elif value >= 0.3:
@@ -55,7 +55,7 @@ def load_game_data():
         df = pd.read_csv(url)
         
         # Normalize column names
-        df.columns = [normalize_column_name(col) for col in df.columns]
+        df.columns = [normalize_column_name(col) for极 col in df.columns]
         
         # Create standard column names
         col_map = {
@@ -91,7 +91,7 @@ def load_game_data():
         
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
-            df['advantage_play_potential'] = 3  # Default: moderate
+            df['advantage_play极potential'] = 3  # Default: moderate
         if 'volatility' not in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
@@ -214,7 +214,7 @@ def main():
     
     .session-card {
         padding: 15px;
-        margin: 10极x 0;
+        margin: 10px 0;
         border-radius: 8px;
         background-color: #f8f9fa;
         border-left: 4px solid #3498db;
@@ -474,7 +474,7 @@ def main():
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
                         </div>
                         <div class="ph-game-detail">
-                            <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
+                            <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}  <!-- Fixed function call -->
                         </div>
                         <div class="ph-game-detail">
                             <strong>🔢 RTP:</strong> {row['rtp']:.2f}%
@@ -568,7 +568,7 @@ def main():
                 session_card = f"""
                 <div class="session-card">
                     <div><strong>📅 {session['date']}</strong> | 🎮 {session['game']}</div>
-                    <div>💵 In: ${session['money_in']:,.2f} | 💰 Out: ${session['money_out']:,.2f} | 
+                    <div>💵 In: ${session['money_in']:,.2f} | 💰 Out: ${session['money_out']:,.2极f} | 
                     <span class="{profit_class}">📈 Profit: ${profit:+,.2f}</span></div>
                     <div><strong>📝 Notes:</strong> {session['notes']}</div>
                 </div>
