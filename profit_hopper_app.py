@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
+        4极: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -76,8 +76,8 @@ def load_game_data():
                     df[standard] = df[variant]
                     break
         
-        # Check required columns
-        required_cols = ['rt极', 'min_bet']
+        # Check required columns - FIXED TYPO HERE (changed 'rt极' to 'rtp')
+        required_cols = ['rtp', 'min_bet']
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
             st.error(f"Missing required columns: {', '.join(missing)}")
@@ -92,7 +92,7 @@ def load_game_data():
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
             df['advantage_play_potential'] = 3  # Default: moderate
-        if 'volatility' not in df.columns:  # FIXED SYNTAX ERROR HERE
+        if 'volatility' not in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
             df['bonus_frequency'] = 0.2  # Default: occasional
@@ -332,7 +332,7 @@ def main():
         
         # Trip summary
         st.subheader("Trip Summary")
-        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]
+        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current极trip_id]
         trip_profit = sum(s['profit'] for s in trip_sessions)
         current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
         
@@ -481,7 +481,7 @@ def main():
                         </div>
                         <div class="ph-game-detail">
                             <strong>💡 Tips:</strong> {row['tips']}
-                        </极div>
+                        </div>
                     </div>
                     """
                     
