@@ -54,14 +54,14 @@ def load_game_data():
         url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
         df = pd.read_csv(url)
         
-        # Normalize column names - FIXED THIS LINE
+        # Normalize column names
         df.columns = [normalize_column_name(col) for col in df.columns]
         
         # Create standard column names
         col_map = {
             'rtp': ['rtp', 'expected_rtp'],
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
-            'advantage_play_potential': ['advant极age_play_potential', 'app', 'advantage_potential'],
+            'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
             'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
@@ -190,7 +190,7 @@ def main():
         font-weight: bold;
     }
     
-极    .ph-game-grid {
+    .ph-game-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 20px;
@@ -451,7 +451,7 @@ def main():
                 filtered_games = filtered_games.sort_values('Score', ascending=False)
                 
                 st.subheader(f"Recommended Games ({len(filtered_games)} matches)")
-                st.caption(f"Showing games with RTP ≥ {min_极rtp}% and min bet ≤ ${max_min_bet:,.2f}")
+                st.caption(f"Showing games with RTP ≥ {min_rtp}% and min bet ≤ ${max_min_bet:,.2f}")
                 
                 # Display games in a responsive grid
                 st.markdown('<div class="ph-game-grid">', unsafe_allow_html=True)
