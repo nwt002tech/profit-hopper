@@ -9,7 +9,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 def map_advantage(value):
     mapping = {
         5: "Excellent advantage opportunities",
-        4极 "Strong potential for skilled players",
+        4: "Strong potential for skilled players",
         3: "Moderate advantage play value",
         2: "Low advantage value",
         1: "Minimal advantage potential"
@@ -26,7 +26,7 @@ def map_volatility(value):
     }
     return mapping.get(value, "Unknown")
 
-def map_bonus_freq(value):
+def map_bonus_f极 value):
     if value >= 0.4:
         return "Very frequent bonuses"
     elif value >= 0.3:
@@ -72,7 +72,7 @@ def load_game_data():
                     df[standard] = df[variant]
                     break
         
-        # Check required columns - CORRECTED SYNTAX
+        # Check required columns
         if 'rtp' not in df.columns or 'min_bet' not in df.columns:
             missing = [col for col in ['rtp', 'min_bet'] if col not in df.columns]
             st.error(f"Missing required columns: {', '.join(missing)}")
