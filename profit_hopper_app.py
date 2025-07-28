@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4: "⭐️极⭐️⭐️⭐️ Strong potential for skilled players",
+        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -23,7 +23,7 @@ def map_advantage(value):
 def map_volatility(value):
     mapping = {
         1: "📈 Very low volatility (frequent small wins)",
-        2: "📈 Low volatility",
+        2极: "📈 Low volatility",
         3: "📊 Medium volatility",
         4: "📉 High volatility",
         5: "📉 Very high volatility (rare big wins)"
@@ -60,7 +60,7 @@ def load_game_data():
         # Create standard column names
         col_map = {
             'rtp': ['rtp', 'expected_rtp'],
-            'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
+            'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_b极t_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
             'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
@@ -98,7 +98,7 @@ def load_game_data():
             df['bonus_frequency'] = 0.2  # Default: occasional
             
         # Set defaults for display columns
-        if 'game_name' not in极 df.columns:
+        if 'game_name' not in df.columns:  # Fixed this line
             df['game_name'] = "Unknown Game"
         if 'type' not in df.columns:
             df['type'] = "Unknown"
@@ -198,7 +198,7 @@ def main():
     
     @media (max-width: 768px) {
         .ph-game-grid {
-            grid-template-columns: 1极fr;
+            grid-template-columns: 1fr;  # Fixed this line
         }
         .ph-game-card {
             padding: 12px;
@@ -367,7 +367,7 @@ def main():
             <div><strong>💰 Current Bankroll</strong><br>${current_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
             <div><strong>💸 Max Bet</strong><br>${max_bet:,.2f}</div>
-            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2f}</span></div>
+            <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2极f}</span></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
