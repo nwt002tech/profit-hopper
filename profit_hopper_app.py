@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4极: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
+        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",  # Fixed key
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -76,7 +76,7 @@ def load_game_data():
                     df[standard] = df[variant]
                     break
         
-        # Check required columns - FIXED TYPO HERE (changed 'rt极' to 'rtp')
+        # Check required columns
         required_cols = ['rtp', 'min_bet']
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
@@ -332,7 +332,7 @@ def main():
         
         # Trip summary
         st.subheader("Trip Summary")
-        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current极trip_id]
+        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]  # Fixed variable name
         trip_profit = sum(s['profit'] for s in trip_sessions)
         current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
         
@@ -597,7 +597,7 @@ def main():
             # Calculate performance metrics
             total_invested = sum(s['money_in'] for s in current_trip_sessions)
             roi = (trip_profit / total_invested) * 100 if total_invested > 0 else 0
-            avg_session_profit = trip_profit / len(current_trip_sessions)
+            avg_session_profit = trip_profit / len(current极trip_sessions)
             
             # Display key metrics
             col1, col2, col3 = st.columns(3)
