@@ -3,7 +3,9 @@ import pandas as pd
 import re
 import numpy as np
 from datetime import datetime
-import altair as alt  # Replaced matplotlib with Streamlit-native Altair
+import altair as alt
+import json
+import base64
 
 # Configure page for mobile
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed", page_title="Profit Hopper Casino Manager")
@@ -50,7 +52,8 @@ def normalize_column_name(name):
 @st.cache_data(ttl=3600)  # Refresh every hour
 def load_game_data():
     try:
-        url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/2b42fd9699f541c353极3d80f84b6f8ef73ba60/extended_game_list.csv"
+        # Use raw GitHub URL directly
+        url = "https://raw.githubusercontent.com/nwt002tech/profit-hopper/main/extended_game_list.csv"
         df = pd.read_csv(url)
         
         # Normalize column names
@@ -62,7 +65,7 @@ def load_game_data():
             'min_bet': ['min_bet', 'minbet', 'minimum_bet', 'min_bet_amount'],
             'advantage_play_potential': ['advantage_play_potential', 'app', 'advantage_potential'],
             'volatility': ['volatility', 'vol'],
-            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bon极_rate'],
+            'bonus_frequency': ['bonus_frequency', 'bonus_freq', 'bonus_rate'],
             'game_name': ['game_name', 'name', 'title', 'game'],
             'type': ['type', 'game_type', 'category'],
             'tips': ['tips', 'tip', 'strategy']
@@ -76,8 +79,9 @@ def load_game_data():
                     break
         
         # Check required columns
-        if 'rtp' not in df.columns or 'min_bet' not in df.columns:
-            missing = [col for col in ['rtp', 'min_bet'] if col not in df.columns]
+        required_cols = ['rtp', 'min_bet']
+        missing = [col for col in required_cols if col not in df.columns]
+        if missing:
             st.error(f"Missing required columns: {', '.join(missing)}")
             return pd.DataFrame()
         
@@ -109,13 +113,24 @@ def load_game_data():
         st.error(f"Error loading game data: {str(e)}")
         return pd.DataFrame()
 
+# Session deletion function
+def delete_session(index):
+    session = st.session_state.session_log[index]
+    st.session_state.bankroll -= session['profit']
+    st.session_state.session_log.pop(index)
+    st.success(f"Session deleted: {session['date']} - {session['game']}")
+
+# CSV download helper
+def get_csv_download_link(df, filename):
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+    return f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV</a>'
+
 # Main app function
 def main():
     # Initialize session state for tracker
     if 'session_log' not in st.session_state:
         st.session_state.session_log = []
-    if 'bankroll_history' not in st.session_state:
-        st.session_state.bankroll_history = []
     if 'bankroll' not in st.session_state:
         st.session_state.bankroll = 1000.0
     if 'session_count' not in st.session_state:
@@ -208,6 +223,20 @@ def main():
     .negative-profit {
         color: #e74c3c;
         font-weight: bold;
+    }
+    
+    .download-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 8px 16px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        border: none;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -384,7 +413,8 @@ def main():
                     session_date = st.date_input("📅 Date", value=datetime.today())
                     money_in = st.number_input("💵 Money In", min_value=0.0, value=float(session_bankroll))
                 with col2:
-                    game_played = st.selectbox("🎮 Game Played", options=["Select Game"] + list(game_df['game_name'].unique()) if not game_df.empty else ["Select Game"])
+                    game_options = ["Select Game"] + list(game_df['game_name'].unique()) if not game_df.empty else ["Select Game"]
+                    game_played = st.selectbox("🎮 Game Played", options=game_options)
                     money_out = st.number_input("💰 Money Out", min_value=0.0, value=0.0)
                 
                 session_notes = st.text_area("📝 Session Notes", placeholder="Record any observations, strategies, or important events during the session...")
@@ -397,16 +427,15 @@ def main():
                     else:
                         profit = money_out - money_in
                         st.session_state.session_log.append({
-                            "date": session_date,
+                            "date": session_date.strftime("%Y-%m-%d"),
                             "game": game_played,
                             "money_in": money_in,
                             "money_out": money_out,
                             "profit": profit,
                             "notes": session_notes
                         })
-                        st.success(f"Session added: ${profit:+,.2f} profit")
                         st.session_state.bankroll += profit
-                        st.experimental_rerun()
+                        st.success(f"Session added: ${profit:+,.2f} profit")
         
         if st.session_state.session_log:
             st.subheader("Session History")
@@ -414,7 +443,7 @@ def main():
             # Sort sessions by date descending
             sorted_sessions = sorted(st.session_state.session_log, key=lambda x: x['date'], reverse=True)
             
-            for i, session in enumerate(sorted_sessions, 1):
+            for idx, session in enumerate(sorted_sessions):
                 profit = session['profit']
                 profit_class = "positive-profit" if profit >= 0 else "negative-profit"
                 
@@ -425,29 +454,26 @@ def main():
                     <span class="{profit_class}">📈 Profit: ${profit:+,.2f}</span></div>
                     <div><strong>📝 Notes:</strong> {session['notes']}</div>
                     <div style="margin-top: 5px;">
-                        <button onclick="deleteSession({i-1})" style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
+                        <button onclick="deleteSession({idx})" style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
                     </div>
                 </div>
                 """
                 st.markdown(session_card, unsafe_allow_html=True)
             
             # JavaScript for session deletion
-            st.markdown("""
+            st.markdown(f"""
             <script>
-            function deleteSession(index) {
-                const data = {index: index};
-                fetch('/delete_session', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
+            function deleteSession(index) {{
+                Streamlit.setComponentValue(JSON.stringify({{action: "delete", index: index}}));
+            }}
             </script>
             """, unsafe_allow_html=True)
+            
+            # Export sessions to CSV
+            st.subheader("Export Data")
+            if st.button("💾 Export Session History to CSV"):
+                session_df = pd.DataFrame(st.session_state.session_log)
+                st.markdown(get_csv_download_link(session_df, "session_history.csv"), unsafe_allow_html=True)
         else:
             st.info("No sessions recorded yet. Add your first session above.")
     
@@ -479,7 +505,7 @@ def main():
             
             # Bankroll growth chart
             bankroll_history = [st.session_state.bankroll - cumulative_profit]
-            dates = [min(session['date'] for session in st.session_state.session_log) if st.session_state.session_log else datetime.today()]
+            dates = [min(session['date'] for session in st.session_state.session_log)]
             cumulative = 0
             
             for session in sorted(st.session_state.session_log, key=lambda x: x['date']):
@@ -550,6 +576,24 @@ def main():
                 st.altair_chart(chart, use_container_width=True)
             else:
                 st.info("No profit data available")
+                
+            # Export analytics data
+            st.subheader("Export Analytics")
+            if st.button("📊 Export Analytics Data to CSV"):
+                analytics_df = pd.DataFrame({
+                    'Metric': ['Current Bankroll', 'Total Profit/Loss', 'ROI', 'Avg Session Profit'],
+                    'Value': [current_bankroll, cumulative_profit, f"{roi}%", avg_session_profit]
+                })
+                st.markdown(get_csv_download_link(analytics_df, "analytics_summary.csv"), unsafe_allow_html=True)
+
+# Handle session deletion
+if st.session_state.get('session_log'):
+    # Check if we have a component value from the JavaScript
+    if st.experimental_get_query_params().get('action'):
+        action = st.experimental_get_query_params().get('action')[0]
+        index = int(st.experimental_get_query_params().get('index')[0])
+        delete_session(index)
+        st.experimental_set_query_params()
 
 # Run the app
 if __name__ == "__main__":
