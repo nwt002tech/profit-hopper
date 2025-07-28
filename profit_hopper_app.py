@@ -5,15 +5,16 @@ import numpy as np
 from datetime import datetime
 import altair as alt
 import base64
+import uuid
 
 # Configure page for mobile
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed", page_title="Profit Hopper Casino Manager")
+st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="Profit Hopper Casino Manager")
 
 # Define descriptive mapping functions
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4: "⭐️⭐️⭐极⭐️ Strong potential for skilled players",
+        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -92,7 +93,7 @@ def load_game_data():
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
             df['advantage_play_potential'] = 3  # Default: moderate
-        if 'volatility' not in df.columns:
+        if 'volatility' not极 in df.columns:
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
             df['bonus_frequency'] = 0.2  # Default: occasional
@@ -111,13 +112,6 @@ def load_game_data():
         st.error(f"Error loading game data: {str(e)}")
         return pd.DataFrame()
 
-# Session deletion function
-def delete_session(index):
-    session = st.session_state.session_log[index]
-    st.session_state.bankroll -= session['profit']
-    st.session_state.session_log.pop(index)
-    st.success(f"Session deleted: {session['date']} - {session['game']}")
-
 # CSV download helper
 def get_csv_download_link(df, filename):
     csv = df.to_csv(index=False)
@@ -129,10 +123,24 @@ def main():
     # Initialize session state for tracker
     if 'session_log' not in st.session_state:
         st.session_state.session_log = []
-    if 'bankroll' not in st.session_state:
-        st.session_state.bankroll = 1000.0
-    if 'session_count' not in st.session_state:
-        st.session_state.session_count = 10
+    if 'current_trip_id' not in st.session_state:
+        st.session_state.current_trip_id = 1
+    if 'casino_list' not in st.session_state:
+        st.session_state.casino_list = sorted([
+            "L’auberge Lake Charles",
+            "Golden Nugget Lake Charles",
+            "Caesar’s Horseshoe Lake Charles",
+            "Delta Downs",
+            "Island View",
+            "Paragon Marksville",
+            "Coushatta"
+        ])
+    if 'trip_settings' not in st.session_state:
+        st.session_state.trip_settings = {
+            'casino': st.session_state.casino_list[0] if st.session_state.casino_list else "",
+            'starting_bankroll': 1000.0,
+            'num_sessions': 10
+        }
     
     # CSS for sticky header and mobile optimization
     st.markdown("""
@@ -213,6 +221,14 @@ def main():
         border-left: 4px solid #3498db;
     }
     
+    .trip-card {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        background-color: #e3f2fd;
+        border-left: 4px solid #1976d2;
+    }
+    
     .positive-profit {
         color: #27ae60;
         font-weight: bold;
@@ -233,41 +249,123 @@ def main():
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
-        border-radius: 4极;
+        border-radius: 4px;
         border: none;
+    }
+    
+    .trip-info-box {
+        background-color: #e8f5e9;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #4caf50;
+    }
+    
+    .trip-id-badge {
+        background-color: #1976d2;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
     
-    # Input panel
-    with st.container():
-        col1, col2 = st.columns(2)
-        with col1:
-            total_bankroll = st.number_input("💰 Total Bankroll", 
-                                            min_value=0.0, 
-                                            value=st.session_state.bankroll,
-                                            step=100.0,
-                                            format="%.2f",
-                                            key='bankroll_input')
-            st.session_state.bankroll = total_bankroll
-        with col2:
-            num_sessions = st.number_input("📅 Number of Sessions", 
-                                          min_value=1, 
-                                          value=st.session_state.session_count,
-                                          step=1,
-                                          key='session_count_input')
-            st.session_state.session_count = num_sessions
+    # Header with logo and title
+    st.markdown("""
+    <div style="text-align:center; padding:20px 0; background:linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); border-radius:10px; margin-bottom:30px;">
+        <h1 style="color:white; margin:0;">🏆 Profit Hopper Casino Manager</h1>
+        <p style="color:white; margin:0;">Smart Bankroll Management & Game Recommendations</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Sidebar for trip settings
+    with st.sidebar:
+        st.header("Trip Settings")
+        
+        # Trip ID display
+        st.markdown(f"""
+        <div style="display:flex; align-items:center; margin-bottom:20px;">
+            <span style="font-weight:bold; margin-right:10px;">Current Trip ID:</span>
+            <span class="trip-id-badge">{st.session_state.current_trip_id}</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Casino selection
+        new_casino = st.text_input("Add New Casino")
+        if new_casino and new_casino not in st.session_state.casino_list:
+            st.session_state.casino_list.append(new_casino)
+            st.session_state.casino_list.sort()
+            st.session_state.trip_settings['casino'] = new_casino
+            st.success(f"Added {new_casino} to casino list")
+        
+        casino = st.selectbox("Casino", 
+                             options=st.session_state.casino_list,
+                             index=st.session_state.casino_list.index(
+                                 st.session_state.trip_settings['casino']
+                             ) if st.session_state.trip_settings['casino'] in st.session_state.casino_list else 0,
+                             key='casino_select')
+        st.session_state.trip_settings['casino'] = casino
+        
+        # Bankroll and sessions
+        starting_bankroll = st.number_input("Starting Bankroll ($)", 
+                                           min_value=0.0, 
+                                           value=st.session_state.trip_settings['starting_bankroll'],
+                                           step=100.0,
+                                           format="%.2f",
+                                           key='bankroll_input')
+        st.session_state.trip_settings['starting_bankroll'] = starting_bankroll
+        
+        num_sessions = st.number_input("Number of Sessions", 
+                                      min_value=1, 
+                                      value=st.session_state.trip_settings['num_sessions'],
+                                      step=1,
+                                      key='session_count_input')
+        st.session_state.trip_settings['num_sessions'] = num_sessions
+        
+        # New trip button
+        if st.button("Start New Trip"):
+            st.session_state.current_trip_id += 1
+            st.session_state.session_log = []
+            st.success(f"Started new trip! Trip ID: {st.session_state.current_trip_id}")
+        
+        st.markdown("---")
+        
+        # Trip summary
+        st.subheader("Trip Summary")
+        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]
+        trip_profit = sum(s['profit'] for s in trip_sessions)
+        current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
+        
+        st.markdown(f"**Casino:** {st.session_state.trip_settings['casino']}")
+        st.markdown(f"**Starting Bankroll:** ${st.session_state.trip_settings['starting_bankroll']:,.2f}")
+        st.markdown(f"**Current Bankroll:** ${current_bankroll:,.2f}")
+        st.markdown(f"**Sessions Completed:** {len(trip_sessions)}/{st.session_state.trip_settings['num_sessions']}")
+        
+        st.markdown("---")
+        st.warning("""
+        **Gambling Risk Notice:**  
+        - These strategies don't guarantee profits  
+        - Never gamble with money you can't afford to lose  
+        - Set strict loss limits before playing  
+        - Gambling addiction help: 1-800-522-4700
+        """)
     
     # Calculations
-    session_bankroll = total_bankroll / num_sessions
+    session_bankroll = st.session_state.trip_settings['starting_bankroll'] / st.session_state.trip_settings['num_sessions']
     max_bet = session_bankroll * 0.25
     stop_loss = session_bankroll * 0.6
     
-    # Sticky header - FIXED TYPO HERE (changed .2极 to .2f)
+    # Current trip sessions
+    current_trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]
+    trip_profit = sum(s['profit'] for s in current_trip_sessions)
+    current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
+    
+    # Sticky header
     st.markdown(f"""
     <div class="ph-sticky-header">
         <div style="display:flex; justify-content:space-around; text-align:center">
-            <div><strong>💰 Total Bankroll</strong><br>${total_bankroll:,.2f}</div>
+            <div><strong>💰 Current Bankroll</strong><br>${current_bankroll:,.2f}</div>
             <div><strong>📅 Session Bankroll</strong><br>${session_bankroll:,.2f}</div>
             <div><strong>💸 Max Bet</strong><br>${max_bet:,.2f}</div>
             <div><strong>🚫 Stop Loss</strong><br><span class="ph-stop-loss">${stop_loss:,.2f}</span></div>
@@ -276,10 +374,12 @@ def main():
     """, unsafe_allow_html=True)
     
     # Main tabs
-    tab1, tab2, tab3 = st.tabs(["🎮 Game Plan", "📊 Session Tracker", "📈 Bankroll Analytics"])
+    tab1, tab2, tab3 = st.tabs(["🎮 Game Plan", "📊 Session Tracker", "📈 Trip Analytics"])
     
     # Game Plan Tab
     with tab1:
+        st.info("Find the best games for your bankroll based on RTP, volatility, and advantage play potential")
+        
         # Load and filter games
         game_df = load_game_data()
         
@@ -309,7 +409,7 @@ def main():
             # Apply filters
             filtered_games = game_df[
                 (game_df['min_bet'] <= max_min_bet) &
-                (game_df['rtp'] >= min_rtp) &
+                (game_df['rtp'] >= min_极tp) &
                 (game_df['rtp'].notna())
             ]
             
@@ -397,6 +497,22 @@ def main():
     
     # Session Tracker Tab
     with tab2:
+        st.info("Track your gambling sessions to monitor performance and bankroll growth")
+        
+        # Trip info box
+        st.markdown(f"""
+        <div class="trip-info-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <div><strong>Current Trip:</strong> #{st.session_state.current_trip_id}</div>
+                <div><strong>Casino:</strong> {st.session_state.trip_settings['casino']}</div>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <div><strong>Starting Bankroll:</strong> ${st.session_state.trip_settings['starting_bankroll']:,.2f}</div>
+                <div><strong>Current Bankroll:</strong> ${current_bankroll:,.2f}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         st.subheader("Session Tracker")
         
         with st.expander("➕ Add New Session", expanded=True):
@@ -404,11 +520,17 @@ def main():
                 col1, col2 = st.columns(2)
                 with col1:
                     session_date = st.date_input("📅 Date", value=datetime.today())
-                    money_in = st.number_input("💵 Money In", min_value=0.0, value=float(session_bankroll))
+                    money_in = st.number_input("💵 Money In", 
+                                              min_value=0.0, 
+                                              value=float(session_bankroll),
+                                              step=5.0)  # Increment by $5
                 with col2:
                     game_options = ["Select Game"] + list(game_df['game_name'].unique()) if not game_df.empty else ["Select Game"]
                     game_played = st.selectbox("🎮 Game Played", options=game_options)
-                    money_out = st.number_input("💰 Money Out", min_value=0.0, value=0.0)
+                    money_out = st.number_input("💰 Money Out", 
+                                               min_value=0.0, 
+                                               value=0.0,
+                                               step=5.0)  # Increment by $5
                 
                 session_notes = st.text_area("📝 Session Notes", placeholder="Record any observations, strategies, or important events during the session...")
                 
@@ -420,21 +542,25 @@ def main():
                     else:
                         profit = money_out - money_in
                         st.session_state.session_log.append({
+                            "trip_id": st.session_state.current_trip_id,
                             "date": session_date.strftime("%Y-%m-%d"),
+                            "casino": st.session_state.trip_settings['casino'],
                             "game": game_played,
                             "money_in": money_in,
                             "money_out": money_out,
                             "profit": profit,
                             "notes": session_notes
                         })
-                        st.session_state.bankroll += profit
                         st.success(f"Session added: ${profit:+,.2f} profit")
         
-        if st.session_state.session_log:
-            st.subheader("Session History")
+        # Display current trip sessions
+        current_trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]
+        
+        if current_trip_sessions:
+            st.subheader(f"Trip #{st.session_state.current_trip_id} Sessions")
             
             # Sort sessions by date descending
-            sorted_sessions = sorted(st.session_state.session_log, key=lambda x: x['date'], reverse=True)
+            sorted_sessions = sorted(current_trip_sessions, key=lambda x: x['date'], reverse=True)
             
             for idx, session in enumerate(sorted_sessions):
                 profit = session['profit']
@@ -446,64 +572,52 @@ def main():
                     <div>💵 In: ${session['money_in']:,.2f} | 💰 Out: ${session['money_out']:,.2f} | 
                     <span class="{profit_class}">📈 Profit: ${profit:+,.2f}</span></div>
                     <div><strong>📝 Notes:</strong> {session['notes']}</div>
-                    <div style="margin-top: 5px;">
-                        <button onclick="deleteSession({idx})" style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Delete</button>
-                    </div>
                 </div>
                 """
                 st.markdown(session_card, unsafe_allow_html=True)
             
-            # JavaScript for session deletion
-            st.markdown(f"""
-            <script>
-            function deleteSession(index) {{
-                Streamlit.setComponentValue(JSON.stringify({{action: "delete", index: index}}));
-            }}
-            </script>
-            """, unsafe_allow_html=True)
-            
             # Export sessions to CSV
             st.subheader("Export Data")
             if st.button("💾 Export Session History to CSV"):
-                session_df = pd.DataFrame(st.session_state.session_log)
-                st.markdown(get_csv_download_link(session_df, "session_history.csv"), unsafe_allow_html=True)
+                session_df = pd.DataFrame(current_trip_sessions)
+                st.markdown(get_csv_download_link(session_df, f"trip_{st.session_state.current_trip_id}_sessions.csv"), unsafe_allow_html=True)
         else:
-            st.info("No sessions recorded yet. Add your first session above.")
+            st.info("No sessions recorded for this trip yet. Add your first session above.")
     
-    # Bankroll Analytics Tab
+    # Trip Analytics Tab
     with tab3:
-        st.subheader("Bankroll Analytics")
+        st.info("Analyze your trip performance and track your bankroll growth")
         
-        if not st.session_state.session_log:
-            st.info("No sessions recorded yet. Add sessions to see analytics.")
+        if not current_trip_sessions:
+            st.info("No sessions recorded for this trip yet. Add sessions to see analytics.")
         else:
             # Calculate cumulative values
-            cumulative_profit = sum(session['profit'] for session in st.session_state.session_log)
-            current_bankroll = st.session_state.bankroll
+            trip_profit = sum(s['profit'] for s in current_trip_sessions)
+            current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
             
             # Calculate performance metrics
-            total_invested = sum(session['money_in'] for session in st.session_state.session_log)
-            roi = (cumulative_profit / total_invested) * 100 if total_invested > 0 else 0
-            avg_session_profit = cumulative_profit / len(st.session_state.session_log)
+            total_invested = sum(s['money_in'] for s in current_trip_sessions)
+            roi = (trip_profit / total_invested) * 100 if total_invested > 0 else 0
+            avg_session_profit = trip_profit / len(current_trip_sessions)
             
             # Display key metrics
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("💰 Current Bankroll", f"${current_bankroll:,.2f}",
-                         delta=f"${cumulative_profit:+,.2f}")
+                         delta=f"${trip_profit:+,.2f}")
             with col2:
-                st.metric("📈 Total Profit/Loss", f"${cumulative_profit:+,.2f}")
+                st.metric("📈 Total Profit/Loss", f"${trip_profit:+,.2f}")
             with col3:
                 st.metric("📊 ROI", f"{roi:.1f}%")
             
             # Bankroll growth chart
-            bankroll_history = [st.session_state.bankroll - cumulative_profit]
-            dates = [min(session['date'] for session in st.session_state.session_log)]
+            bankroll_history = [st.session_state.trip_settings['starting_bankroll']]
+            dates = [min(s['date'] for s in current_trip_sessions)]
             cumulative = 0
             
-            for session in sorted(st.session_state.session_log, key=lambda x: x['date']):
+            for session in sorted(current_trip_sessions, key=lambda x: x['date']):
                 cumulative += session['profit']
-                bankroll_history.append(st.session_state.bankroll - cumulative_profit + cumulative)
+                bankroll_history.append(st.session_state.trip_settings['starting_bankroll'] + cumulative)
                 dates.append(session['date'])
             
             st.subheader("Bankroll Growth")
@@ -516,7 +630,7 @@ def main():
             # Game performance analysis
             st.subheader("Game Performance")
             game_performance = {}
-            for session in st.session_state.session_log:
+            for session in current_trip_sessions:
                 game = session['game']
                 if game not in game_performance:
                     game_performance[game] = {
@@ -547,7 +661,7 @@ def main():
             
             # Win/Loss distribution using Altair
             st.subheader("Win/Loss Distribution")
-            profits = [s['profit'] for s in st.session_state.session_log]
+            profits = [s['profit'] for s in current_trip_sessions]
             
             if profits:
                 df = pd.DataFrame({
@@ -572,23 +686,15 @@ def main():
                 
             # Export analytics data
             st.subheader("Export Analytics")
-            if st.button("📊 Export Analytics Data to CSV"):
+            if st.button("📊 Export Trip Analytics to CSV"):
                 analytics_df = pd.DataFrame({
-                    'Metric': ['Current Bankroll', 'Total Profit/Loss', 'ROI', 'Avg Session Profit'],
-                    'Value': [current_bankroll, cumulative_profit, f"{roi}%", avg_session_profit]
+                    'Metric': ['Trip ID', 'Casino', 'Starting Bankroll', 'Current Bankroll', 
+                              'Total Profit/Loss', 'ROI', 'Avg Session Profit', 'Sessions Completed'],
+                    'Value': [st.session_state.current_trip_id, st.session_state.trip_settings['casino'], 
+                             st.session_state.trip_settings['starting_bankroll'], current_bankroll,
+                             trip_profit, f"{roi}%", avg_session_profit, len(current_trip_sessions)]
                 })
-                st.markdown(get_csv_download_link(analytics_df, "analytics_summary.csv"), unsafe_allow_html=True)
-
-# Handle session deletion using the new query_params API
-if st.session_state.get('session_log'):
-    # Check if we have a component value from the JavaScript
-    query_params = st.query_params
-    if "action" in query_params and "index" in query_params:
-        action = query_params["action"]
-        index = int(query_params["index"])
-        delete_session(index)
-        # Clear the query parameters
-        st.query_params.clear()
+                st.markdown(get_csv_download_link(analytics_df, f"trip_{st.session_state.current_trip_id}_analytics.csv"), unsafe_allow_html=True)
 
 # Run the app
 if __name__ == "__main__":
