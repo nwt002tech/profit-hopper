@@ -26,7 +26,7 @@ def map_volatility(value):
     }
     return mapping.get(value, "Unknown")
 
-def map_bonus_f极 value):
+def map_bonus_freq(value):
     if value >= 0.4:
         return "Very frequent bonuses"
     elif value >= 0.3:
@@ -34,7 +34,7 @@ def map_bonus_f极 value):
     elif value >= 0.2:
         return "Occasional bonuses"
     elif value >= 0.1:
-        return "Rare bonuses"
+        return "R极 bonuses"
     else:
         return "Very rare bonuses"
 
@@ -93,7 +93,7 @@ def load_game_data():
             df['bonus_frequency'] = 0.2  # Default: occasional
             
         # Set defaults for display columns
-        if 'game_name' not in df.columns:
+        if 'game_name' not in极 df.columns:
             df['game_name'] = "Unknown Game"
         if 'type' not in df.columns:
             df['type'] = "Unknown"
