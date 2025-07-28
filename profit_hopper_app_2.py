@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+import altair as alt  # Replaced matplotlib with Altair
 
 # Initialize session state
 if 'bankroll_history' not in st.session_state:
@@ -178,17 +179,29 @@ with col2:
             roi = ((results['final_bankroll'] - initial_bankroll) / initial_bankroll) * 100
             st.success(f"Return on Investment: {roi:.1f}%")
         
-        # Plot bankroll history
-        fig, ax = plt.subplots()
-        ax.plot(st.session_state.bankroll_history, 'b-', linewidth=2)
-        ax.axhline(y=initial_bankroll, color='r', linestyle='--', label='Starting Bankroll')
-        ax.set_title("Bankroll Over Time")
-        ax.set_xlabel("Session Number")
-        ax.set_ylabel("Bankroll ($)")
-        ax.grid(True)
-        ax.legend()
+        # Plot bankroll history with Altair
+        chart_data = pd.DataFrame({
+            'Session': range(len(st.session_state.bankroll_history)),
+            'Bankroll': st.session_state.bankroll_history
+        })
         
-        st.pyplot(fig)
+        line = alt.Chart(chart_data).mark_line().encode(
+            x='Session',
+            y='Bankroll'
+        )
+        
+        rule = alt.Chart(pd.DataFrame({'Starting Bankroll': [initial_bankroll]})).mark_rule(
+            color='red',
+            strokeDash=[5, 5]
+        ).encode(y='Starting Bankroll')
+        
+        chart = (line + rule).properties(
+            title='Bankroll Over Sessions',
+            width=600,
+            height=400
+        )
+        
+        st.altair_chart(chart, use_container_width=True)
     else:
         st.info("Run the simulation to see bankroll projections")
 
