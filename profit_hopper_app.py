@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="
 def map_advantage(value):
     mapping = {
         5: "⭐️⭐️⭐️⭐️⭐️ Excellent advantage opportunities",
-        4: "⭐️⭐️⭐️⭐️ Strong potential for skilled players",  # Fixed key
+        4: "⭐️极⭐️⭐️⭐️ Strong potential for skilled players",
         3: "⭐️⭐️⭐️ Moderate advantage play value",
         2: "⭐️⭐️ Low advantage value",
         1: "⭐️ Minimal advantage potential"
@@ -98,7 +98,7 @@ def load_game_data():
             df['bonus_frequency'] = 0.2  # Default: occasional
             
         # Set defaults for display columns
-        if 'game_name' not in df.columns:
+        if 'game_name' not in极 df.columns:
             df['game_name'] = "Unknown Game"
         if 'type' not in df.columns:
             df['type'] = "Unknown"
@@ -198,7 +198,7 @@ def main():
     
     @media (max-width: 768px) {
         .ph-game-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1极fr;
         }
         .ph-game-card {
             padding: 12px;
@@ -332,7 +332,7 @@ def main():
         
         # Trip summary
         st.subheader("Trip Summary")
-        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]  # Fixed variable name
+        trip_sessions = [s for s in st.session_state.session_log if s['trip_id'] == st.session_state.current_trip_id]
         trip_profit = sum(s['profit'] for s in trip_sessions)
         current_bankroll = st.session_state.trip_settings['starting_bankroll'] + trip_profit
         
@@ -597,7 +597,7 @@ def main():
             # Calculate performance metrics
             total_invested = sum(s['money_in'] for s in current_trip_sessions)
             roi = (trip_profit / total_invested) * 100 if total_invested > 0 else 0
-            avg_session_profit = trip_profit / len(current极trip_sessions)
+            avg_session_profit = trip_profit / len(current_trip_sessions)  # Fixed variable name
             
             # Display key metrics
             col1, col2, col3 = st.columns(3)
