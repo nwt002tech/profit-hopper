@@ -5,7 +5,6 @@ import numpy as np
 from datetime import datetime
 import altair as alt
 import base64
-import uuid
 
 # Configure page for mobile
 st.set_page_config(layout="wide", initial_sidebar_state="expanded", page_title="Profit Hopper Casino Manager")
@@ -78,7 +77,7 @@ def load_game_data():
                     break
         
         # Check required columns
-        required_cols = ['rtp', 'min_bet']
+        required_cols = ['rt极', 'min_bet']
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
             st.error(f"Missing required columns: {', '.join(missing)}")
@@ -93,7 +92,7 @@ def load_game_data():
         # Set defaults for optional columns
         if 'advantage_play_potential' not in df.columns:
             df['advantage_play_potential'] = 3  # Default: moderate
-        if 'volatility' not极 in df.columns:
+        if 'volatility' not in df.columns:  # FIXED SYNTAX ERROR HERE
             df['volatility'] = 3  # Default: medium
         if 'bonus_frequency' not in df.columns:
             df['bonus_frequency'] = 0.2  # Default: occasional
@@ -409,7 +408,7 @@ def main():
             # Apply filters
             filtered_games = game_df[
                 (game_df['min_bet'] <= max_min_bet) &
-                (game_df['rtp'] >= min_极tp) &
+                (game_df['rtp'] >= min_rtp) &
                 (game_df['rtp'].notna())
             ]
             
@@ -482,7 +481,7 @@ def main():
                         </div>
                         <div class="ph-game-detail">
                             <strong>💡 Tips:</strong> {row['tips']}
-                        </div>
+                        </极div>
                     </div>
                     """
                     
