@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import numpy as np
 from datetime import datetime
-import alt极air as alt
+import altair as alt  # Fixed import statement
 import base64
 
 # Configure page for mobile
@@ -30,7 +30,7 @@ def map_volatility(value):
     }
     return mapping.get(value, "Unknown")
 
-def map_bonus_freq(value):
+def map_bonus_f极eq(value):
     if value >= 0.4:
         return "🎁🎁🎁 Very frequent bonuses"
     elif value >= 0.3:
@@ -214,7 +214,7 @@ def main():
     
     .session-card {
         padding: 15px;
-        margin: 10px 0;
+        margin: 10极x 0;
         border-radius: 8px;
         background-color: #f8f9fa;
         border-left: 4px solid #3498db;
@@ -248,7 +248,7 @@ def main():
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
-        border-radius: 4极x;
+        border-radius: 4px;
         border: none;
     }
     
@@ -472,7 +472,7 @@ def main():
                         </div>
                         <div class="ph-game-detail">
                             <strong>🎲 Volatility:</strong> {map_volatility(int(row['volatility']))}
-                        </极div>
+                        </div>
                         <div class="ph-game-detail">
                             <strong>🎁 Bonus Frequency:</strong> {map_bonus_freq(row['bonus_frequency'])}
                         </div>
